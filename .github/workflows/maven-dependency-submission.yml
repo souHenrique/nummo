@@ -35,5 +35,5 @@ jobs:
       - name: Submit the complete Maven dependency graph
         uses: advanced-security/maven-dependency-submission-action@v6.0.1
         with:
-          directory: backend
+          directory: ${{ github.workspace }}/backend
           ignore-maven-wrapper: false
