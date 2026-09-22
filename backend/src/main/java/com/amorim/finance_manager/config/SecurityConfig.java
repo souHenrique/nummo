@@ -1,6 +1,7 @@
 package com.amorim.finance_manager.config;
 
 import com.amorim.finance_manager.security.JwtAuthenticationFilter;
+import com.amorim.finance_manager.security.CookieCsrfProtectionFilter;
 import com.amorim.finance_manager.security.AuthRateLimitFilter;
 import com.amorim.finance_manager.security.AuthRateLimitProperties;
 import com.amorim.finance_manager.security.AuthCookieProperties;
@@ -37,6 +38,7 @@ public class SecurityConfig {
             HttpSecurity http,
             AuthRateLimitFilter authRateLimitFilter,
             JwtAuthenticationFilter jwtAuthenticationFilter,
+            CookieCsrfProtectionFilter cookieCsrfProtectionFilter,
             RestAuthenticationEntryPoint restAuthenticationEntryPoint
     ) throws Exception {
 
@@ -76,6 +78,10 @@ public class SecurityConfig {
                 .addFilterBefore(
                         jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class
+                )
+                .addFilterAfter(
+                        cookieCsrfProtectionFilter,
+                        JwtAuthenticationFilter.class
                 )
                 .build();
     }

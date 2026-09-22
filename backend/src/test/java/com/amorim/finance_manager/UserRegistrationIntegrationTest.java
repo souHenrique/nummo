@@ -104,7 +104,8 @@ class UserRegistrationIntegrationTest {
                 .andExpect(jsonPath("$.email").value("jesse.pinkman@example.com"));
 
         mockMvc.perform(post("/api/v1/auth/logout")
-                        .cookie(login.getResponse().getCookie("nummo_session")))
+                        .cookie(login.getResponse().getCookie("nummo_session"))
+                        .header(HttpHeaders.ORIGIN, "http://localhost:4200"))
                 .andExpect(status().isNoContent())
                 .andExpect(header().string(HttpHeaders.SET_COOKIE, containsString("Max-Age=0")));
     }
