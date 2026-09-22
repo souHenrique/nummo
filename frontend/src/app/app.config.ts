@@ -11,13 +11,14 @@ import { API_BASE_URL } from './core/config/api-base-url';
 import { routes } from './app.routes';
 import { apiErrorInterceptor } from './core/interceptors/api-error.interceptor';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
+import { csrfInterceptor } from './core/interceptors/csrf.interceptor';
 
 export function createAppConfig(apiBaseUrl: string = environment.apiBaseUrl): ApplicationConfig {
   return {
     providers: [
       provideBrowserGlobalErrorListeners(),
       provideRouter(routes),
-      provideHttpClient(withInterceptors([authInterceptor, apiErrorInterceptor])),
+      provideHttpClient(withInterceptors([authInterceptor, csrfInterceptor, apiErrorInterceptor])),
       importProvidersFrom(DialogModule),
       {
         provide: API_BASE_URL,

@@ -103,8 +103,20 @@ class UserRegistrationIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.email").value("jesse.pinkman@example.com"));
 
+        MvcResult csrf = mockMvc.perform(get("/api/v1/auth/csrf")
+                        .cookie(login.getResponse().getCookie("nummo_session")))
+                .andExpect(status().isOk())
+                .andReturn();
+        String csrfToken = objectMapper.readTree(csrf.getResponse().getContentAsString())
+                .get("token")
+                .asText();
+
         mockMvc.perform(post("/api/v1/auth/logout")
-                        .cookie(login.getResponse().getCookie("nummo_session"))
+                        .cookie(
+                                login.getResponse().getCookie("nummo_session"),
+                                new jakarta.servlet.http.Cookie("XSRF-TOKEN", csrfToken)
+                        )
+                        .header("X-XSRF-TOKEN", csrfToken)
                         .header(HttpHeaders.ORIGIN, "http://localhost:4200"))
                 .andExpect(status().isNoContent())
                 .andExpect(header().string(HttpHeaders.SET_COOKIE, containsString("Max-Age=0")));

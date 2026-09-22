@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { of } from 'rxjs';
 
 import { SessionService } from '../../../core/auth/session.service';
+import { CsrfTokenService } from '../../../core/auth/csrf-token.service';
 import { User } from '../../../shared/models/user.models';
 import { AuthApiService } from '../data-access/auth-api.service';
 import { AuthResponse, LoginRequest, RegisterRequest } from '../models/auth.models';
@@ -22,6 +23,9 @@ describe('AuthService', () => {
   let router: {
     navigate: ReturnType<typeof vi.fn>;
   };
+  let csrfToken: {
+    clear: ReturnType<typeof vi.fn>;
+  };
 
   beforeEach(() => {
     authApi = {
@@ -35,6 +39,9 @@ describe('AuthService', () => {
     };
     router = {
       navigate: vi.fn().mockResolvedValue(true),
+    };
+    csrfToken = {
+      clear: vi.fn(),
     };
 
     TestBed.configureTestingModule({
@@ -51,6 +58,10 @@ describe('AuthService', () => {
         {
           provide: Router,
           useValue: router,
+        },
+        {
+          provide: CsrfTokenService,
+          useValue: csrfToken,
         },
       ],
     });
@@ -107,6 +118,7 @@ describe('AuthService', () => {
     service.logout();
 
     expect(authApi.logout).toHaveBeenCalledOnce();
+    expect(csrfToken.clear).toHaveBeenCalledOnce();
     expect(session.clear).toHaveBeenCalledOnce();
     expect(router.navigate).toHaveBeenCalledWith(['/login']);
   });

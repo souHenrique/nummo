@@ -1,12 +1,15 @@
 package com.amorim.finance_manager.config;
 
 import com.amorim.finance_manager.security.JwtAuthenticationFilter;
-import com.amorim.finance_manager.security.CookieCsrfProtectionFilter;
 import com.amorim.finance_manager.security.AuthRateLimitFilter;
 import com.amorim.finance_manager.security.AuthRateLimitProperties;
 import com.amorim.finance_manager.security.AuthCookieProperties;
+import com.amorim.finance_manager.security.AuthCookieService;
+import com.amorim.finance_manager.security.RestAccessDeniedHandler;
 import com.amorim.finance_manager.security.RestAuthenticationEntryPoint;
 import com.amorim.finance_manager.user.service.CustomUserDetailsService;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -23,6 +26,10 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfFilter;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -38,13 +45,21 @@ public class SecurityConfig {
             HttpSecurity http,
             AuthRateLimitFilter authRateLimitFilter,
             JwtAuthenticationFilter jwtAuthenticationFilter,
-            CookieCsrfProtectionFilter cookieCsrfProtectionFilter,
-            RestAuthenticationEntryPoint restAuthenticationEntryPoint
+            RestAuthenticationEntryPoint restAuthenticationEntryPoint,
+            RestAccessDeniedHandler restAccessDeniedHandler,
+            AuthCookieProperties authCookieProperties
     ) throws Exception {
+
+        CookieCsrfTokenRepository csrfTokenRepository = csrfTokenRepository(authCookieProperties);
+        CsrfTokenRequestAttributeHandler csrfTokenRequestHandler = new CsrfTokenRequestAttributeHandler();
 
         return http
                 .cors(Customizer.withDefaults())
-                .csrf(AbstractHttpConfigurer::disable)
+                .csrf(csrf -> csrf
+                        .csrfTokenRepository(csrfTokenRepository)
+                        .csrfTokenRequestHandler(csrfTokenRequestHandler)
+                        .requireCsrfProtectionMatcher(cookieAuthenticatedUnsafeRequest())
+                )
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session
@@ -55,6 +70,8 @@ public class SecurityConfig {
                                 "/api/v1/auth/register",
                                 "/api/v1/auth/login",
                                 "/api/v1/auth/logout")
+                        .permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/auth/csrf")
                         .permitAll()
                         .requestMatchers(
                                 "/actuator/health",
@@ -70,6 +87,7 @@ public class SecurityConfig {
                 )
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint(restAuthenticationEntryPoint)
+                        .accessDeniedHandler(restAccessDeniedHandler)
                 )
                 .addFilterBefore(
                         authRateLimitFilter,
@@ -78,10 +96,6 @@ public class SecurityConfig {
                 .addFilterBefore(
                         jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class
-                )
-                .addFilterAfter(
-                        cookieCsrfProtectionFilter,
-                        JwtAuthenticationFilter.class
                 )
                 .build();
     }
@@ -92,7 +106,12 @@ public class SecurityConfig {
 
         configuration.setAllowedOrigins(corsProperties.allowedOrigins());
         configuration.setAllowedMethods(List.of("GET", "POST", "PATCH", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept"));
+        configuration.setAllowedHeaders(List.of(
+                "Authorization",
+                "Content-Type",
+                "Accept",
+                "X-XSRF-TOKEN"
+        ));
         configuration.setExposedHeaders(List.of("Content-Disposition", "Retry-After"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
@@ -102,6 +121,41 @@ public class SecurityConfig {
         source.registerCorsConfiguration("/api/**", configuration);
 
         return source;
+    }
+
+    private CookieCsrfTokenRepository csrfTokenRepository(AuthCookieProperties authCookieProperties) {
+        CookieCsrfTokenRepository repository = new CookieCsrfTokenRepository();
+
+        repository.setCookiePath("/api");
+        repository.setCookieCustomizer(cookie -> cookie
+                .httpOnly(true)
+                .secure(authCookieProperties.secure())
+                .sameSite(authCookieProperties.sameSite())
+        );
+
+        return repository;
+    }
+
+    private RequestMatcher cookieAuthenticatedUnsafeRequest() {
+        return request -> CsrfFilter.DEFAULT_CSRF_MATCHER.matches(request)
+                && hasSessionCookie(request);
+    }
+
+    private boolean hasSessionCookie(HttpServletRequest request) {
+        Cookie[] cookies = request.getCookies();
+
+        if (cookies == null) {
+            return false;
+        }
+
+        for (Cookie cookie : cookies) {
+            if (AuthCookieService.SESSION_COOKIE_NAME.equals(cookie.getName())
+                    && !cookie.getValue().isBlank()) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     @Bean
