@@ -4,6 +4,8 @@ import com.amorim.finance_manager.config.openapi.OpenApiConfig;
 import com.amorim.finance_manager.report.api.CompetenceReportApiDocs;
 import com.amorim.finance_manager.report.dto.CompetenceReportRequest;
 import com.amorim.finance_manager.report.dto.CompetenceReportResponse;
+import com.amorim.finance_manager.report.dto.AnnualCashFlowReportRequest;
+import com.amorim.finance_manager.report.dto.AnnualCompetenceReportResponse;
 import com.amorim.finance_manager.report.service.CompetenceReportService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -33,5 +35,13 @@ public class CompetenceReportController implements CompetenceReportApiDocs {
                         request.endDate()
                 )
         );
+    }
+
+    @Override
+    @GetMapping("/annual")
+    public ResponseEntity<AnnualCompetenceReportResponse> annual(
+            @Valid @ModelAttribute AnnualCashFlowReportRequest request
+    ) {
+        return ResponseEntity.ok(reportService.annual(request.year()));
     }
 }

@@ -3,6 +3,9 @@ package com.amorim.finance_manager.report.service;
 import com.amorim.finance_manager.category.entity.Category;
 import com.amorim.finance_manager.category.repository.CategoryRepository;
 import com.amorim.finance_manager.report.dto.CompetenceReportResponse;
+import com.amorim.finance_manager.report.dto.AnnualCashFlowMonthResponse;
+import com.amorim.finance_manager.report.dto.AnnualCompetenceReportResponse;
+import com.amorim.finance_manager.report.projection.AnnualCashFlowAggregate;
 import com.amorim.finance_manager.report.projection.CompetenceAggregate;
 import com.amorim.finance_manager.report.repository.CompetenceReportRepository;
 import com.amorim.finance_manager.shared.exception.InvalidReportPeriodException;
@@ -18,6 +21,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Service
 @RequiredArgsConstructor
@@ -70,6 +74,33 @@ public class CompetenceReportService {
         );
     }
 
+    public AnnualCompetenceReportResponse annual(Integer year) {
+        validateYear(year);
+
+        LocalDate start = LocalDate.of(year, 1, 1);
+        LocalDate end = LocalDate.of(year, 12, 31);
+        UUID userId = currentUserService.getCurrentUserId();
+
+        Map<Integer, List<AnnualCashFlowAggregate>> rowsByMonth = reportRepository.aggregateByMonth(
+                        userId,
+                        start,
+                        end,
+                        TransactionStatus.COMPLETED,
+                        INCLUDED_TYPES
+                )
+                .stream()
+                .collect(Collectors.groupingBy(AnnualCashFlowAggregate::month));
+
+        List<AnnualCashFlowMonthResponse> evolution = IntStream.rangeClosed(1, 12)
+                .mapToObj(month -> new AnnualCashFlowMonthResponse(
+                        month,
+                        calculator.summarizeTotals(rowsByMonth.getOrDefault(month, List.of()))
+                ))
+                .toList();
+
+        return new AnnualCompetenceReportResponse(year, start, end, evolution);
+    }
+
     private Map<UUID, String> loadCategoryNames(UUID userId, List<CompetenceAggregate> rows) {
         Set<UUID> categoryIds = rows.stream()
                 .map(CompetenceAggregate::categoryId)
@@ -96,6 +127,12 @@ public class CompetenceReportService {
 
         if (startDate.isAfter(endDate)) {
             throw new InvalidReportPeriodException("A data inicial não pode ser posterior à data final");
+        }
+    }
+
+    private void validateYear(Integer year) {
+        if (year == null || year < 1 || year > 9999) {
+            throw new InvalidReportPeriodException("O ano deve estar entre 1 e 9999");
         }
     }
 }

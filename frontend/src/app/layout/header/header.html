@@ -22,6 +22,17 @@
   </a>
 
   <div class="header__actions">
+    <button
+      class="header__theme-toggle"
+      type="button"
+      [attr.aria-label]="
+        themeService.theme() === 'light' ? 'Ativar tema escuro' : 'Ativar tema claro'
+      "
+      [attr.title]="themeService.theme() === 'light' ? 'Ativar tema escuro' : 'Ativar tema claro'"
+      (click)="toggleTheme()"
+    >
+      <span aria-hidden="true">{{ themeService.theme() === 'light' ? '☀' : '☾' }}</span>
+    </button>
     <a class="header__profile" routerLink="/profile">Perfil</a>
 
     <app-button class="header__logout" variant="secondary" size="sm" (pressed)="logout()">

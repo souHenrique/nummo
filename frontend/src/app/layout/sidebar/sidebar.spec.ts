@@ -23,7 +23,7 @@ describe('Sidebar', () => {
     expect(links).toHaveLength(APP_NAVIGATION.length);
 
     expect(links.map((link) => link.textContent?.trim())).toEqual(
-      APP_NAVIGATION.map((item) => `${item.symbol} ${item.label}`),
+      APP_NAVIGATION.map((item) => item.label),
     );
   });
 

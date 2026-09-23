@@ -76,6 +76,15 @@ public class CreditCardController implements CreditCardApiDocs {
                 .body(creditCardPurchaseService.create(id, request));
     }
 
+    @PatchMapping("/{id}/purchases/{transactionId}")
+    public ResponseEntity<List<TransactionResponse>> updatePurchase(
+            @PathVariable UUID id,
+            @PathVariable UUID transactionId,
+            @Valid @RequestBody UpdateCreditCardPurchaseRequest request
+    ) {
+        return ResponseEntity.ok(creditCardPurchaseService.update(id, transactionId, request));
+    }
+
     @Override
     @PostMapping("/{creditCardId}/purchase/{transactionId}/refund")
     public ResponseEntity<CreditCardRefundResponse> refundPurchase(

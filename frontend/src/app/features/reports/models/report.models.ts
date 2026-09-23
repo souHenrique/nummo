@@ -62,6 +62,13 @@ export interface AnnualCashFlow {
   evolution: AnnualCashFlowMonth[];
 }
 
+export interface AnnualCompetenceReport {
+  year: number;
+  startDate: string;
+  endDate: string;
+  evolution: AnnualCashFlowMonth[];
+}
+
 export interface CompetenceReport {
   startDate: string;
   endDate: string;

@@ -37,6 +37,8 @@ type InvoiceDetailState = 'loading' | 'success' | 'error';
 type InvoiceOperation =
   | 'confirming-close'
   | 'closing'
+  | 'confirming-reopen'
+  | 'reopening'
   | 'confirming-payment'
   | 'paying'
   | 'confirming-refund'
@@ -100,6 +102,7 @@ export class InvoiceDetailPage implements OnInit {
 
   readonly paymentForm = this.formBuilder.nonNullable.group({
     sourceAccountId: [''],
+    paymentDate: ['', Validators.required],
   });
 
   readonly refundForm = this.formBuilder.nonNullable.group({
@@ -216,6 +219,54 @@ export class InvoiceDetailPage implements OnInit {
       });
   }
 
+  reopenInvoice(): void {
+    const invoice = this.invoice();
+    if (
+      !invoice ||
+      (invoice.status !== 'CLOSED' && invoice.status !== 'PAID') ||
+      this.isProcessing()
+    )
+      return;
+    this.operation.set('confirming-reopen');
+    this.dialog
+      .confirm({
+        title: 'Reabrir fatura?',
+        message:
+          invoice.status === 'PAID'
+            ? 'O pagamento será desfeito e a fatura voltará a aceitar correções nas compras e parcelas.'
+            : 'A fatura voltará a aceitar correções nas compras e parcelas.',
+        confirmLabel: 'Reabrir fatura',
+        cancelLabel: 'Cancelar',
+      })
+      .pipe(
+        take(1),
+        switchMap((confirmed) => {
+          if (!confirmed) {
+            this.operation.set(null);
+            return EMPTY;
+          }
+          this.operation.set('reopening');
+          return this.invoiceApi.reopen(invoice.id, { expectedVersion: invoice.version });
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
+        next: () => {
+          this.operation.set(null);
+          this.toast.show({
+            tone: 'success',
+            title: 'Fatura reaberta',
+            message: 'Agora você pode corrigir as compras desta fatura.',
+          });
+          this.loadInvoice();
+        },
+        error: (error: unknown) => {
+          this.operation.set(null);
+          this.handleMutationError(error);
+        },
+      });
+  }
+
   payInvoice(): void {
     const invoice = this.invoice();
 
@@ -223,7 +274,13 @@ export class InvoiceDetailPage implements OnInit {
       return;
     }
 
+    if (this.paymentForm.invalid) {
+      this.paymentForm.markAllAsTouched();
+      return;
+    }
+
     const sourceAccountId = this.paymentForm.controls.sourceAccountId.value || null;
+    const paymentDate = this.paymentForm.controls.paymentDate.value;
     const sourceAccount = this.activeAccounts().find((account) => account.id === sourceAccountId);
     const paymentSource = sourceAccount
       ? `usando a conta ${sourceAccount.name}`
@@ -234,7 +291,7 @@ export class InvoiceDetailPage implements OnInit {
     this.dialog
       .confirm({
         title: 'Pagar fatura?',
-        message: `A fatura de ${this.formatAmount(invoice.totalAmount)} será quitada ${paymentSource}.`,
+        message: `A fatura de ${this.formatAmount(invoice.totalAmount)} será quitada ${paymentSource} em ${this.formatDate(paymentDate)}.`,
         confirmLabel: 'Pagar fatura',
         cancelLabel: 'Revisar dados',
         danger: true,
@@ -251,6 +308,7 @@ export class InvoiceDetailPage implements OnInit {
 
           return this.invoiceApi.pay(invoice.id, {
             sourceAccountId,
+            paymentDate,
             expectedVersion: invoice.version,
           });
         }),
@@ -487,6 +545,7 @@ export class InvoiceDetailPage implements OnInit {
 
     this.paymentForm.reset({
       sourceAccountId: selectedAccount?.id ?? '',
+      paymentDate: new Date().toISOString().slice(0, 10),
     });
   }
 

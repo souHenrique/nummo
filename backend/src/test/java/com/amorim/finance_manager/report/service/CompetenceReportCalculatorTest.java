@@ -2,6 +2,7 @@ package com.amorim.finance_manager.report.service;
 
 import com.amorim.finance_manager.report.dto.CategoryCashFlowResponse;
 import com.amorim.finance_manager.report.projection.CompetenceAggregate;
+import com.amorim.finance_manager.report.projection.AnnualCashFlowAggregate;
 import com.amorim.finance_manager.transaction.entity.TransactionType;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -68,6 +69,23 @@ class CompetenceReportCalculatorTest {
                 .extracting(CategoryCashFlowResponse::categoryId)
                 .containsExactly(otherExpenseCategory, EXPENSE_CATEGORY);
         assertThat(response.expenseCategories().get(1).amount()).isEqualByComparingTo("500.00");
+    }
+
+    @Test
+    void shouldIncludeCreditCardPurchasesInMonthlyCompetenceTotals() {
+        var totals = calculator.summarizeTotals(List.of(
+                new AnnualCashFlowAggregate(9, TransactionType.INCOME, new BigDecimal("2000.00")),
+                new AnnualCashFlowAggregate(9, TransactionType.EXPENSE, new BigDecimal("300.00")),
+                new AnnualCashFlowAggregate(
+                        9,
+                        TransactionType.CREDIT_CARD_PURCHASE,
+                        new BigDecimal("700.00")
+                )
+        ));
+
+        assertThat(totals.inflows()).isEqualByComparingTo("2000.00");
+        assertThat(totals.outflows()).isEqualByComparingTo("1000.00");
+        assertThat(totals.net()).isEqualByComparingTo("1000.00");
     }
 
     @Test

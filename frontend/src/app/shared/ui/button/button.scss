@@ -8,6 +8,7 @@
   align-items: center;
   justify-content: center;
   min-height: var(--control-height-md);
+  width: var(--button-width, auto);
   padding: var(--space-2) var(--space-4);
   font-weight: var(--font-weight-semibold);
   color: var(--color-text);
@@ -18,7 +19,7 @@
 }
 
 .button--primary {
-  color: var(--color-on-primary);
+  color: var(--color-primary-text);
   background: var(--color-primary);
 }
 
@@ -32,7 +33,7 @@
 }
 
 .button--danger {
-  color: var(--color-on-primary);
+  color: var(--color-danger-button-text);
   background: var(--color-danger-text);
 }
 

@@ -2,6 +2,8 @@ package com.amorim.finance_manager.report.api;
 
 import com.amorim.finance_manager.report.dto.CompetenceReportRequest;
 import com.amorim.finance_manager.report.dto.CompetenceReportResponse;
+import com.amorim.finance_manager.report.dto.AnnualCashFlowReportRequest;
+import com.amorim.finance_manager.report.dto.AnnualCompetenceReportResponse;
 import com.amorim.finance_manager.shared.exception.ApiError;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -117,4 +119,28 @@ public interface CompetenceReportApiDocs {
             )
     })
     ResponseEntity<CompetenceReportResponse> generate(@ParameterObject CompetenceReportRequest request);
+
+    @Operation(
+            summary = "Consultar evolução anual por competência",
+            description = """
+                    Retorna os totais mensais por data da despesa. Compras no cartão
+                    entram no mês de cada compra ou parcela; o pagamento da fatura
+                    não é incluído como uma nova saída.
+                    """
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Evolução anual por competência calculada",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = AnnualCompetenceReportResponse.class)
+                    )
+            ),
+            @ApiResponse(responseCode = "400", description = "Ano inválido"),
+            @ApiResponse(responseCode = "401", description = "Autenticação ausente ou token inválido")
+    })
+    ResponseEntity<AnnualCompetenceReportResponse> annual(
+            @ParameterObject AnnualCashFlowReportRequest request
+    );
 }

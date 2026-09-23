@@ -60,8 +60,7 @@ public class DashboardService {
         BigDecimal creditCardPurchaseOutflows = competenceReportService
                 .creditCardPurchaseOutflows(period.getYear(), period.getMonthValue());
 
-        BigDecimal monthlyBalance = monthlyCash.net()
-                .subtract(creditCardPurchaseOutflows);
+        BigDecimal monthlyBalance = monthlyCash.net();
 
         BigDecimal consolidatedBalance = accountRepository.sumCurrentBalanceByUserId(userId);
 
@@ -85,7 +84,7 @@ public class DashboardService {
                 period.getMonthValue(),
                 periodStart,
                 periodEnd,
-                cashAndInvoice(monthlyBalance),
+                cash(monthlyBalance),
                 cash(monthlyCash.inflows()),
                 cash(totalOutflows),
                 cash(monthlyCash.outflows()),
@@ -104,10 +103,6 @@ public class DashboardService {
 
     private DashboardIndicatorResponse competence(BigDecimal amount) {
         return new DashboardIndicatorResponse(AccountingBasis.COMPETENCE, amount);
-    }
-
-    private DashboardIndicatorResponse cashAndInvoice(BigDecimal amount) {
-        return new DashboardIndicatorResponse(AccountingBasis.CASH_AND_INVOICE, amount);
     }
 
     private DashboardBudgetResponse budgetSummary(List<BudgetResponse> budgets) {

@@ -111,10 +111,6 @@ public class TransactionService {
                 .findByIdAndUserId(transactionId, userId)
                 .orElseThrow(TransactionNotFoundException::new);
 
-        validateGenericMutation(transaction);
-
-        TransactionStatus previousStatus = transaction.getStatus();
-
         if (transaction.getStatus() == TransactionStatus.CANCELLED) {
             throw new InvalidTransactionStatusException("Transação cancelada não pode ser editada");
         }
@@ -122,6 +118,12 @@ public class TransactionService {
         if (request.status() == TransactionStatus.CANCELLED) {
             throw new InvalidTransactionStatusException("Utilize o endpoint de cancelamento");
         }
+
+        if (isCardManagedTransaction(transaction)) {
+            return updateCardManagedTransactionMetadata(transaction, request, userId);
+        }
+
+        TransactionStatus previousStatus = transaction.getStatus();
 
         transactionImpactService.reverse(userId, transaction);
 
@@ -146,6 +148,91 @@ public class TransactionService {
         );
 
         return transactionMapper.toResponse(saved);
+    }
+
+    private TransactionResponse updateCardManagedTransactionMetadata(
+            Transaction transaction,
+            UpdateTransactionRequest request,
+            UUID userId
+    ) {
+        validateCardManagedTransactionUpdate(transaction, request);
+
+        if (transaction.getType() == TransactionType.CREDIT_CARD_PURCHASE
+                && request.categoryId() != null) {
+            Category category = findOwnedCategory(request.categoryId(), userId);
+            validateCategory(category, TransactionType.EXPENSE);
+        }
+
+        List<Transaction> relatedTransactions = relatedCardTransactions(transaction, userId);
+
+        for (Transaction relatedTransaction : relatedTransactions) {
+            if (request.description() != null) {
+                relatedTransaction.setDescription(request.description());
+            }
+
+            if (request.categoryId() != null) {
+                relatedTransaction.setCategoryId(request.categoryId());
+            }
+        }
+
+        transactionRepository.saveAllAndFlush(relatedTransactions);
+
+        log.info(
+                "event=transaction.metadata_updated transactionId={} userId={} type={}",
+                transaction.getId(),
+                userId,
+                transaction.getType()
+        );
+
+        return transactionMapper.toResponse(transaction);
+    }
+
+    private List<Transaction> relatedCardTransactions(Transaction transaction, UUID userId) {
+        if (transaction.getType() == TransactionType.CREDIT_CARD_PURCHASE
+                && transaction.getInstallmentGroupId() != null
+                && transaction.getCreditCardId() != null) {
+            return transactionRepository
+                    .findAllByInstallmentGroupIdAndCreditCardIdAndUserIdOrderByInstallmentNumberAsc(
+                            transaction.getInstallmentGroupId(),
+                            transaction.getCreditCardId(),
+                            userId
+                    );
+        }
+
+        return List.of(transaction);
+    }
+
+    private void validateCardManagedTransactionUpdate(
+            Transaction transaction,
+            UpdateTransactionRequest request
+    ) {
+        if (request.amount() != null
+                || request.competenceDate() != null
+                || request.effectiveDate() != null
+                || request.status() != null
+                || request.paymentMethod() != null
+                || request.sourceAccountId() != null
+                || request.destinationAccountId() != null) {
+            throw new InvalidTransactionException(
+                    "Nesta transação, somente as informações descritivas podem ser alteradas"
+            );
+        }
+
+        if (request.description() != null && request.description().isBlank()) {
+            throw new InvalidTransactionException("Descrição da transação é obrigatória");
+        }
+
+        if (transaction.getType() == TransactionType.CREDIT_CARD_PAYMENT
+                && request.categoryId() != null) {
+            throw new InvalidTransactionException(
+                    "A categoria de um pagamento de fatura não pode ser alterada"
+            );
+        }
+    }
+
+    private boolean isCardManagedTransaction(Transaction transaction) {
+        return transaction.getType() == TransactionType.CREDIT_CARD_PURCHASE
+                || transaction.getType() == TransactionType.CREDIT_CARD_PAYMENT;
     }
 
     @Transactional

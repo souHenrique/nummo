@@ -13,7 +13,7 @@
           (click)="navigated.emit()"
         >
           <span class="sidebar__symbol" aria-hidden="true">
-            {{ item.symbol }}
+            <svg [lucideIcon]="item.icon" [size]="18" [strokeWidth]="1.9"></svg>
           </span>
 
           <span>{{ item.label }}</span>

@@ -32,7 +32,6 @@ describe('ToastContainer', () => {
       title: 'Sucesso',
       message: 'Orçamento criado',
       tone: 'success',
-      durationMs: 0,
     });
 
     fixture.detectChanges();
@@ -50,7 +49,6 @@ describe('ToastContainer', () => {
     service.show({
       message: 'Dados atualizados',
       tone: 'success',
-      durationMs: 0,
     });
 
     fixture.detectChanges();
@@ -64,7 +62,6 @@ describe('ToastContainer', () => {
     service.show({
       message: 'Falha ao salvar',
       tone: 'danger',
-      durationMs: 0,
     });
 
     fixture.detectChanges();
@@ -78,7 +75,6 @@ describe('ToastContainer', () => {
     service.show({
       message: 'Operação concluída',
       tone: 'success',
-      durationMs: 0,
     });
 
     fixture.detectChanges();
@@ -92,7 +88,6 @@ describe('ToastContainer', () => {
   it('should remove the toast when close is clicked', () => {
     service.show({
       message: 'Mensagem removível',
-      durationMs: 0,
     });
 
     fixture.detectChanges();
@@ -111,12 +106,10 @@ describe('ToastContainer', () => {
   it('should render multiple toasts', () => {
     service.show({
       message: 'Primeiro',
-      durationMs: 0,
     });
 
     service.show({
       message: 'Segundo',
-      durationMs: 0,
     });
 
     fixture.detectChanges();

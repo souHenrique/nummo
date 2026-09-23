@@ -21,4 +21,6 @@ public interface CreditCardCreditApplicationRepository extends JpaRepository<Cre
     BigDecimal sumAppliedAmount(
             @Param("invoiceId") UUID invoiceId
     );
+
+    List<CreditCardCreditApplication> findAllByInvoiceId(UUID invoiceId);
 }

@@ -228,6 +228,28 @@ describe('TransactionFormComponent', () => {
     expect(submitted).toHaveBeenCalledWith({ description: 'Mercado do Walter White' });
   });
 
+  it('allows a card purchase to update only its description and category', () => {
+    const purchase: Transaction = {
+      ...expenseTransaction,
+      type: 'CREDIT_CARD_PURCHASE',
+      paymentMethod: 'CREDIT_CARD',
+      creditCardId: '6f2e3d4c-5b6a-7980-1234-56789abcdef0',
+      installmentGroupId: '7f2e3d4c-5b6a-7980-1234-56789abcdef0',
+      installmentNumber: 1,
+      installmentCount: 3,
+    };
+    createComponent('edit', purchase);
+    const submitted = vi.fn();
+    component.submitted.subscribe(submitted);
+    component.form.controls.description.setValue('Compra do Walter White');
+    component.submit();
+
+    expect(fixture.nativeElement.querySelector('#transaction-amount')).toBeNull();
+    expect(fixture.nativeElement.querySelector('#competence-date')).toBeNull();
+    expect(fixture.nativeElement.querySelector('#transaction-category')).not.toBeNull();
+    expect(submitted).toHaveBeenCalledWith({ description: 'Compra do Walter White' });
+  });
+
   it('disables actions while submitting', () => {
     createComponent('create');
     fixture.componentRef.setInput('submitting', true);

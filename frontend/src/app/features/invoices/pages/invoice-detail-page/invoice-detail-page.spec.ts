@@ -26,6 +26,7 @@ describe('InvoiceDetailPage', () => {
   let invoiceApi: {
     findById: ReturnType<typeof vi.fn>;
     close: ReturnType<typeof vi.fn>;
+    reopen: ReturnType<typeof vi.fn>;
     pay: ReturnType<typeof vi.fn>;
   };
   let router: { navigate: ReturnType<typeof vi.fn> };
@@ -125,6 +126,7 @@ describe('InvoiceDetailPage', () => {
     invoiceApi = {
       findById: vi.fn().mockReturnValue(of(invoice)),
       close: vi.fn().mockReturnValue(of({ ...invoice, status: 'CLOSED', version: 5 })),
+      reopen: vi.fn().mockReturnValue(of({ ...invoice, status: 'OPEN', version: 6 })),
       pay: vi.fn().mockReturnValue(
         of({
           invoiceId: invoice.id,
@@ -176,7 +178,7 @@ describe('InvoiceDetailPage', () => {
     expect(accountApi.findAll).toHaveBeenCalledOnce();
     expect(content).toContain('Cartão Heisenberg');
     expect(content).toContain('09/2026');
-    expect(content).toContain('Versão');
+    expect(content).not.toContain('Versão');
     expect(content).toContain('Mercado do Jesse');
     expect(content).toContain('Parcela 2 de 3');
     expect(content).toContain('Fechar fatura');
@@ -395,6 +397,7 @@ describe('InvoiceDetailPage', () => {
 
     expect(invoiceApi.pay).toHaveBeenCalledWith(invoice.id, {
       sourceAccountId: account.id,
+      paymentDate: expect.any(String),
       expectedVersion: invoice.version,
     });
     expect(dialog.confirm).toHaveBeenCalledWith(
@@ -442,11 +445,12 @@ describe('InvoiceDetailPage', () => {
 
     expect(invoiceApi.pay).toHaveBeenCalledWith(invoice.id, {
       sourceAccountId: null,
+      paymentDate: expect.any(String),
       expectedVersion: invoice.version,
     });
   });
 
-  it('should show credit information and no financial actions for paid or cancelled invoices', () => {
+  it('should allow reopening a paid invoice while keeping cancelled invoices read-only', () => {
     invoiceApi.findById.mockReturnValue(
       of({
         ...invoice,
@@ -462,6 +466,7 @@ describe('InvoiceDetailPage', () => {
 
     expect(paidContent).toContain('Créditos aplicados');
     expect(paidContent).toContain('Fatura quitada');
+    expect(paidContent).toContain('Reabrir fatura');
     expect(paidContent).not.toContain('Fechar fatura');
     expect(paidContent).not.toContain('Pagar fatura');
 
@@ -471,8 +476,33 @@ describe('InvoiceDetailPage', () => {
     const cancelledContent = fixture.nativeElement.textContent as string;
 
     expect(cancelledContent).toContain('Fatura cancelada');
+    expect(cancelledContent).not.toContain('Reabrir fatura');
     expect(cancelledContent).not.toContain('Fechar fatura');
     expect(cancelledContent).not.toContain('Pagar fatura');
+  });
+
+  it('should confirm reopening a paid invoice and reload its data', () => {
+    const paidInvoice = {
+      ...invoice,
+      status: 'PAID' as const,
+      paidAt: '2026-09-28T14:30:00Z',
+      version: 7,
+    };
+    invoiceApi.findById.mockReturnValue(of(paidInvoice));
+    createPage();
+
+    component.reopenInvoice();
+
+    expect(dialog.confirm).toHaveBeenCalledWith(
+      expect.objectContaining({ message: expect.stringContaining('pagamento será desfeito') }),
+    );
+    expect(invoiceApi.reopen).toHaveBeenCalledWith(invoice.id, { expectedVersion: 7 });
+    expect(toast.show).toHaveBeenCalledWith({
+      tone: 'success',
+      title: 'Fatura reaberta',
+      message: 'Agora você pode corrigir as compras desta fatura.',
+    });
+    expect(invoiceApi.findById).toHaveBeenCalledTimes(2);
   });
 
   it('should reload a conflicting invoice without automatically repeating the operation', () => {

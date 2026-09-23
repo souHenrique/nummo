@@ -44,6 +44,13 @@ export class InvoiceApiService {
     );
   }
 
+  reopen(id: string, request: CloseInvoiceRequest): Observable<InvoiceSummary> {
+    return this.http.post<InvoiceSummary>(
+      this.apiUrl.build(`invoices/${encodeURIComponent(id)}/reopen`),
+      request,
+    );
+  }
+
   pay(id: string, request: PayInvoiceRequest): Observable<InvoicePayment> {
     return this.http.post<InvoicePayment>(
       this.apiUrl.build(`invoices/${encodeURIComponent(id)}/pay`),

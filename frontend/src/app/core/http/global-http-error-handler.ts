@@ -22,7 +22,6 @@ export class GlobalHttpErrorHandler {
           tone: 'danger',
           title: 'Servidor indisponível',
           message: error.message,
-          durationMs: 0,
         });
         return;
 
@@ -51,7 +50,6 @@ export class GlobalHttpErrorHandler {
           tone: 'warning',
           title: 'Conflito detectado',
           message: error.message,
-          durationMs: 0,
         });
         return;
 
@@ -60,7 +58,6 @@ export class GlobalHttpErrorHandler {
           tone: 'danger',
           title: 'Erro inesperado',
           message: GENERIC_SERVER_MESSAGE,
-          durationMs: 0,
         });
     }
   }
@@ -86,7 +83,6 @@ export class GlobalHttpErrorHandler {
       tone: 'warning',
       title: 'Sessão encerrada',
       message: 'Entre novamente para continuar.',
-      durationMs: 0,
     });
 
     const returnUrl = this.router.url.startsWith('/') ? this.router.url : '/dashboard';

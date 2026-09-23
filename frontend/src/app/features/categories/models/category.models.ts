@@ -15,6 +15,20 @@ export type CategoryIcon =
   | 'GIFT'
   | 'PET'
   | 'INVESTMENT'
+  | 'RESTAURANT'
+  | 'CLOTHING'
+  | 'FUEL'
+  | 'ENTERTAINMENT'
+  | 'FITNESS'
+  | 'MUSIC'
+  | 'PHONE'
+  | 'INTERNET'
+  | 'TECHNOLOGY'
+  | 'COMPUTER'
+  | 'SALARY'
+  | 'FREELANCE'
+  | 'FAMILY'
+  | 'CHARITY'
   | 'OTHER';
 
 export const DEFAULT_CATEGORY_ICON: CategoryIcon = 'TAG';

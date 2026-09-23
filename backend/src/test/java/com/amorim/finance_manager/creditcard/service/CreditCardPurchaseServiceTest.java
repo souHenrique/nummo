@@ -8,6 +8,7 @@ import com.amorim.finance_manager.creditcard.dto.CreateCreditCardPurchaseRequest
 import com.amorim.finance_manager.creditcard.entity.CreditCard;
 import com.amorim.finance_manager.creditcard.entity.CreditCardStatus;
 import com.amorim.finance_manager.creditcard.repository.CreditCardRepository;
+import com.amorim.finance_manager.creditcard.repository.CreditCardRefundItemRepository;
 import com.amorim.finance_manager.invoice.entity.Invoice;
 import com.amorim.finance_manager.invoice.entity.InvoiceStatus;
 import com.amorim.finance_manager.invoice.repository.InvoiceRepository;
@@ -77,6 +78,8 @@ class CreditCardPurchaseServiceTest {
     private TransactionMapper transactionMapper;
     @Mock
     private CurrentUserService currentUserService;
+    @Mock
+    private CreditCardRefundItemRepository refundItemRepository;
 
     private CreditCardPurchaseService service;
 
@@ -90,7 +93,8 @@ class CreditCardPurchaseServiceTest {
                 transactionRepository,
                 transactionMapper,
                 currentUserService,
-                new InstallmentCalculator()
+                new InstallmentCalculator(),
+                refundItemRepository
         );
     }
 

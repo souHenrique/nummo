@@ -97,9 +97,7 @@ public class InvoicePaymentService {
 
         Instant paymentInstant = financeClock.instant();
 
-        LocalDate paymentDate = paymentInstant
-                .atZone(financeClock.getZone())
-                .toLocalDate();
+        LocalDate paymentDate = request.paymentDate();
 
         UUID paymentTransactionId = null;
 

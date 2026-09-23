@@ -24,7 +24,7 @@
       <app-alert
         tone="warning"
         title="Edição indisponível"
-        message="Transações canceladas ou de tipos não suportados não podem ser editadas nesta tela."
+        message="Transações canceladas não podem ser alteradas."
       />
 
       <div class="transaction-edit-page__actions">
@@ -49,15 +49,59 @@
         </div>
       }
 
-      <app-transaction-form
-        mode="edit"
-        [transaction]="currentTransaction"
-        [accounts]="accounts()"
-        [categories]="categories()"
-        [submitting]="isSubmitting()"
-        (submitted)="update($event)"
-        (cancelled)="goBack()"
-      />
+      @if (isCreditCardPurchase(currentTransaction)) {
+        <form
+          class="transaction-edit-page__purchase-form"
+          [formGroup]="purchaseForm"
+          (ngSubmit)="updatePurchase()"
+        >
+          <label
+            >Descrição <input type="text" formControlName="description" maxlength="255"
+          /></label>
+          <label
+            >Valor total <input type="number" formControlName="amount" min="0.01" step="0.01"
+          /></label>
+          <label
+            >Data da compra <input type="date" formControlName="purchaseDate"
+          /></label>
+          <label
+            >Categoria
+            <select formControlName="categoryId">
+              @for (category of categories(); track category.id) {
+                @if (category.type === 'EXPENSE' && category.status === 'ACTIVE') {
+                  <option [value]="category.id">{{ category.name }}</option>
+                }
+              }
+            </select>
+          </label>
+          <label
+            >Quantidade de parcelas
+            <input type="number" formControlName="installmentCount" min="1" step="1"
+          /></label>
+          <div class="transaction-edit-page__actions">
+            <app-button
+              type="button"
+              variant="secondary"
+              [disabled]="isSubmitting()"
+              (pressed)="goBack()"
+              >Cancelar</app-button
+            >
+            <app-button type="submit" [loading]="isSubmitting()" [disabled]="isSubmitting()"
+              >Salvar alterações</app-button
+            >
+          </div>
+        </form>
+      } @else {
+        <app-transaction-form
+          mode="edit"
+          [transaction]="currentTransaction"
+          [accounts]="accounts()"
+          [categories]="categories()"
+          [submitting]="isSubmitting()"
+          (submitted)="update($event)"
+          (cancelled)="goBack()"
+        />
+      }
     }
   }
 </section>

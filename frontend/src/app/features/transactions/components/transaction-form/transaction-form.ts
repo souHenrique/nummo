@@ -80,13 +80,24 @@ export class TransactionFormComponent {
 
   readonly selectedType = signal<TransactionType | null>(null);
 
+  readonly isCardManagedEdit = computed(
+    () =>
+      this.mode() === 'edit' &&
+      (this.selectedType() === 'CREDIT_CARD_PURCHASE' ||
+        this.selectedType() === 'CREDIT_CARD_PAYMENT'),
+  );
+
+  readonly canEditCategory = computed(() => this.selectedType() !== 'CREDIT_CARD_PAYMENT');
+
   readonly activeAccounts = computed(() =>
     this.accounts().filter((account) => account.status === 'ACTIVE'),
   );
 
   readonly visibleCategories = computed(() =>
     this.categories().filter(
-      (category) => category.status === 'ACTIVE' && category.type === this.selectedType(),
+      (category) =>
+        category.status === 'ACTIVE' &&
+        category.type === (this.selectedType() === 'INCOME' ? 'INCOME' : 'EXPENSE'),
     ),
   );
 
@@ -132,6 +143,14 @@ export class TransactionFormComponent {
   private syncConditionalControls(): void {
     const type = this.selectedType();
     const status = this.form.controls.status.value;
+
+    if (this.isCardManagedEdit()) {
+      this.form.controls.categoryId.setValidators(
+        type === 'CREDIT_CARD_PURCHASE' ? Validators.required : [],
+      );
+      this.form.controls.categoryId.updateValueAndValidity();
+      return;
+    }
 
     if (type === 'INCOME') {
       this.form.controls.destinationAccountId.setValidators(Validators.required);
@@ -213,6 +232,14 @@ export class TransactionFormComponent {
       request.description = description;
     }
 
+    if (this.isCardManagedEdit()) {
+      if (original.type === 'CREDIT_CARD_PURCHASE' && value.categoryId !== original.categoryId) {
+        request.categoryId = value.categoryId!;
+      }
+
+      return request;
+    }
+
     if (value.amount !== original.amount) {
       request.amount = value.amount!;
     }
@@ -251,5 +278,18 @@ export class TransactionFormComponent {
     }
 
     return request;
+  }
+
+  typeLabel(type: TransactionType | null): string {
+    const labels: Record<TransactionType, string> = {
+      INCOME: 'Receita',
+      EXPENSE: 'Despesa',
+      TRANSFER: 'Transferência',
+      CREDIT_CARD_PURCHASE: 'Compra no cartão',
+      CREDIT_CARD_PAYMENT: 'Pagamento de fatura',
+      ADJUSTMENT: 'Ajuste',
+    };
+
+    return type ? labels[type] : '';
   }
 }

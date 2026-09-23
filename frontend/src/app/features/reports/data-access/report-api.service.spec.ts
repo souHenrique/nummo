@@ -4,6 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { API_BASE_URL } from '../../../core/config/api-base-url';
 import {
   AnnualCashFlow,
+  AnnualCompetenceReport,
   CashFlowSummary,
   CompetenceReport,
   DailyCashFlow,
@@ -176,6 +177,28 @@ describe('ReportApiService', () => {
     expect(request.request.method).toBe('GET');
     expect(request.request.params.get('startDate')).toBe(response.startDate);
     expect(request.request.params.get('endDate')).toBe(response.endDate);
+
+    request.flush(response);
+  });
+
+  it('deve buscar a evolução anual por competência', () => {
+    const response: AnnualCompetenceReport = {
+      year: 2026,
+      startDate: '2026-01-01',
+      endDate: '2026-12-31',
+      evolution: [],
+    };
+
+    service.getCompetenceAnnual(2026).subscribe((result) => {
+      expect(result).toEqual(response);
+    });
+
+    const request = httpMock.expectOne(
+      (candidate) => candidate.url === '/api/v1/reports/competence/annual',
+    );
+
+    expect(request.request.method).toBe('GET');
+    expect(request.request.params.get('year')).toBe('2026');
 
     request.flush(response);
   });

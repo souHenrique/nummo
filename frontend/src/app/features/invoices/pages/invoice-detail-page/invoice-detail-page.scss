@@ -1,5 +1,18 @@
 :host {
   display: block;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.page,
+app-card,
+.invoice-detail__payment,
+.invoice-detail__credit,
+.invoice-detail__transactions,
+.invoice-detail__refund {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .invoice-detail__skeletons,
@@ -39,6 +52,7 @@ app-alert,
   margin: 0;
   color: var(--color-text);
   font-weight: var(--font-weight-semibold);
+  overflow-wrap: anywhere;
 }
 
 .invoice-detail__actions,
@@ -109,6 +123,7 @@ app-alert,
 }
 
 .invoice-detail__table-wrapper {
+  min-width: 0;
   overflow-x: auto;
   margin-top: var(--space-4);
   border: 1px solid var(--color-border);
@@ -140,7 +155,16 @@ tbody tr:last-child td {
   border-bottom: 0;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 48rem) {
+  .page__header {
+    gap: var(--space-4);
+  }
+
+  .page__header > app-button {
+    width: 100%;
+    --button-width: 100%;
+  }
+
   .invoice-detail__data {
     grid-template-columns: 1fr;
   }
@@ -155,6 +179,7 @@ tbody tr:last-child td {
   .invoice-detail__payment-actions app-button,
   .invoice-detail__refund-actions app-button {
     width: 100%;
+    --button-width: 100%;
   }
 
   .invoice-detail__payment,
@@ -162,5 +187,66 @@ tbody tr:last-child td {
   .invoice-detail__transactions,
   .invoice-detail__refund {
     padding: var(--space-4);
+  }
+
+  .invoice-detail__table-wrapper {
+    overflow: visible;
+    border: 0;
+  }
+
+  table,
+  tbody,
+  tr,
+  td {
+    display: block;
+    width: 100%;
+  }
+
+  table {
+    min-width: 0;
+  }
+
+  thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  tbody {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  tbody tr {
+    padding: var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-muted);
+  }
+
+  td {
+    display: grid;
+    grid-template-columns: minmax(6.25rem, 40%) minmax(0, 1fr);
+    gap: var(--space-3);
+    align-items: center;
+    padding: var(--space-2) 0;
+    overflow-wrap: anywhere;
+  }
+
+  td::before {
+    content: attr(data-label);
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  td:last-child {
+    border-bottom: 0;
   }
 }

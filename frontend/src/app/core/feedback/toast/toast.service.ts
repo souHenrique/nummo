@@ -3,6 +3,8 @@ import { ShowToastOptions, ToastMessage } from './toast.model';
 
 @Injectable({ providedIn: 'root' })
 export class ToastService {
+  private static readonly DURATION_MS = 5_000;
+
   private nextId = 0;
   private readonly timers = new Map<number, ReturnType<typeof setTimeout>>();
   private readonly messagesState = signal<ToastMessage[]>([]);
@@ -12,7 +14,7 @@ export class ToastService {
   show(options: ShowToastOptions): number {
     const id = ++this.nextId;
     const tone = options.tone ?? 'info';
-    const durationMs = options.durationMs ?? (tone === 'danger' ? 0 : 6000);
+    const durationMs = ToastService.DURATION_MS;
 
     const toast: ToastMessage = {
       id,

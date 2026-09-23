@@ -178,6 +178,7 @@ describe('TransactionDetailPage', () => {
     expect(content).toContain('2/3');
     expect(content).toContain('3/3');
     expect(content).toContain('R$300.00');
+    expect(content).toContain('Editar');
   });
 
   it('opens confirmation and does not cancel when the user declines', () => {

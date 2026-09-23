@@ -175,8 +175,11 @@ describe('CategoryFormComponent', () => {
   it('should render a selectable generic icon palette', () => {
     createComponent();
 
-    expect(fixture.nativeElement.querySelectorAll('[role="radio"]')).toHaveLength(15);
+    expect(fixture.nativeElement.querySelectorAll('[role="radio"]')).toHaveLength(
+      fixture.componentInstance.iconOptions.length,
+    );
     expect(fixture.nativeElement.querySelector('[aria-label="Alimentação"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('[aria-label="Salário"]')).not.toBeNull();
   });
 
   it('should disable both actions while submitting', () => {

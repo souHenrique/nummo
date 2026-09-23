@@ -30,7 +30,7 @@ public record DashboardResponse(
         )
         LocalDate periodEnd,
 
-        @Schema(description = "Saldo mensal: entradas e saídas efetivas do mês, menos compras vinculadas às faturas de referência do mês")
+        @Schema(description = "Saldo mensal: entradas e saídas efetivas do mês, incluindo pagamentos de fatura quando realizados")
         DashboardIndicatorResponse monthlyBalance,
 
         @Schema(description = "Entradas efetivadas durante o mês")

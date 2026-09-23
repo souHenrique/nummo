@@ -158,7 +158,7 @@ class DashboardIntegrationTest {
         assertThat(response.path("periodStart").asText()).isEqualTo("2026-09-01");
         assertThat(response.path("periodEnd").asText()).isEqualTo("2026-09-30");
 
-        assertIndicator(response, "monthlyBalance", "2000.00", "CASH_AND_INVOICE");
+        assertIndicator(response, "monthlyBalance", "2700.00", "CASH");
         assertIndicator(response, "monthlyInflows", "3500.00", "CASH");
         assertIndicator(response, "totalOutflows", "9800.00", "CASH");
         assertIndicator(response, "monthlyOutflows", "800.00", "CASH");
@@ -190,7 +190,7 @@ class DashboardIntegrationTest {
 
         JsonNode response = getDashboard(token);
 
-        assertIndicator(response, "monthlyBalance", "0.00", "CASH_AND_INVOICE");
+        assertIndicator(response, "monthlyBalance", "0.00", "CASH");
         assertIndicator(response, "monthlyInflows", "0.00", "CASH");
         assertIndicator(response, "totalOutflows", "0.00", "CASH");
         assertIndicator(response, "monthlyOutflows", "0.00", "CASH");

@@ -104,6 +104,28 @@
   border-radius: var(--radius-md);
 }
 
+.header__theme-toggle {
+  display: inline-grid;
+  flex: 0 0 auto;
+  width: var(--control-height-sm);
+  height: var(--control-height-sm);
+  padding: 0;
+  cursor: pointer;
+  color: var(--color-on-primary);
+  background: rgb(242 245 248 / 10%);
+  border: 1px solid rgb(201 214 229 / 45%);
+  border-radius: var(--radius-md);
+  place-items: center;
+}
+
+.header__theme-toggle:hover {
+  background: rgb(242 245 248 / 18%);
+}
+
+.header__theme-toggle:focus-visible {
+  @include mixins.focus-ring;
+}
+
 .header__profile:hover {
   background: rgb(242 245 248 / 10%);
 }

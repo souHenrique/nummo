@@ -42,6 +42,8 @@ export interface CreateCreditCardPurchaseRequest {
   installmentCount: number;
 }
 
+export type UpdateCreditCardPurchaseRequest = CreateCreditCardPurchaseRequest;
+
 export interface CreditCardRefundRequest {
   reason: string;
 }

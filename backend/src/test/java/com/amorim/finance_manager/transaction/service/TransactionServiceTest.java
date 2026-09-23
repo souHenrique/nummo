@@ -34,6 +34,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -196,6 +197,76 @@ class TransactionServiceTest {
                             assertThat(message).doesNotContain(AMOUNT.toPlainString())
                     );
         }
+    }
+
+    @Test
+    void shouldUpdateDescriptionAndCategoryForCreditCardPurchaseWithoutChangingBalance() {
+        Transaction purchase = transactionFrom(completedExpense(PaymentMethod.DEBIT));
+        purchase.setUserId(USER_ID);
+        purchase.setType(TransactionType.CREDIT_CARD_PURCHASE);
+        purchase.setPaymentMethod(PaymentMethod.CREDIT_CARD);
+        purchase.setCreditCardId(UUID.randomUUID());
+        purchase.setInstallmentGroupId(null);
+
+        UUID newCategoryId = UUID.randomUUID();
+        Category newCategory = activeCategory(CategoryType.EXPENSE);
+        newCategory.setId(newCategoryId);
+        UpdateTransactionRequest request = new UpdateTransactionRequest(
+                "Compra do Jesse Pinkman",
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                newCategoryId
+        );
+        TransactionResponse response = responseFrom(completedExpense(PaymentMethod.DEBIT));
+
+        when(transactionRepository.findByIdAndUserId(TRANSACTION_ID, USER_ID))
+                .thenReturn(Optional.of(purchase));
+        when(categoryRepository.findByIdAndUserId(newCategoryId, USER_ID))
+                .thenReturn(Optional.of(newCategory));
+        when(transactionMapper.toResponse(purchase)).thenReturn(response);
+
+        TransactionResponse result = transactionService.update(TRANSACTION_ID, request);
+
+        assertThat(result).isEqualTo(response);
+        assertThat(purchase.getDescription()).isEqualTo("Compra do Jesse Pinkman");
+        assertThat(purchase.getCategoryId()).isEqualTo(newCategoryId);
+        verify(transactionRepository).saveAllAndFlush(List.of(purchase));
+        verifyNoInteractions(transactionImpactService);
+    }
+
+    @Test
+    void shouldRejectFinancialChangesToCreditCardPurchase() {
+        Transaction purchase = transactionFrom(completedExpense(PaymentMethod.DEBIT));
+        purchase.setUserId(USER_ID);
+        purchase.setType(TransactionType.CREDIT_CARD_PURCHASE);
+        purchase.setPaymentMethod(PaymentMethod.CREDIT_CARD);
+
+        UpdateTransactionRequest request = new UpdateTransactionRequest(
+                null,
+                new BigDecimal("80.00"),
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+        );
+
+        when(transactionRepository.findByIdAndUserId(TRANSACTION_ID, USER_ID))
+                .thenReturn(Optional.of(purchase));
+
+        assertThatThrownBy(() -> transactionService.update(TRANSACTION_ID, request))
+                .isInstanceOf(InvalidTransactionException.class)
+                .hasMessageContaining("somente as informações descritivas");
+
+        verifyNoInteractions(transactionImpactService);
+        verify(transactionRepository, never()).saveAllAndFlush(any());
     }
 
     @Test

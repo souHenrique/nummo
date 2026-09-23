@@ -42,20 +42,83 @@
   gap: var(--space-4);
 }
 
-.dashboard__indicator-card {
-  --card-height: 100%;
-  --card-surface: var(--color-info-surface);
+.dashboard__summary-card {
+  position: relative;
+  overflow: hidden;
+  min-height: 15.25rem;
+}
+
+.dashboard__summary-card::before {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0.375rem;
+  height: 100%;
+  content: '';
+  background: var(--dashboard-accent);
+}
+
+.dashboard__summary-card--balance {
+  --dashboard-accent: var(--color-primary);
+  --card-surface: linear-gradient(135deg, var(--color-info-surface), var(--color-surface));
   --card-border: var(--color-info-border);
-  --card-text: var(--color-text);
-  --card-text-muted: var(--color-text-muted);
-  min-height: 12rem;
+}
+
+.dashboard__summary-card--invoices {
+  --dashboard-accent: var(--color-brand-600);
+  --card-surface: linear-gradient(135deg, var(--color-surface-subtle), var(--color-surface));
+  --card-border: var(--color-border);
+}
+
+.dashboard__summary-main {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.dashboard__summary-main > span {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+}
+
+.dashboard__summary-breakdown {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+  padding: var(--space-4) 0 0;
+  margin: var(--space-5) 0 0;
+  border-top: 1px solid var(--card-border);
+}
+
+.dashboard__summary-breakdown div {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.dashboard__summary-breakdown dt {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+}
+
+.dashboard__summary-breakdown dd {
+  margin: 0;
+  color: var(--color-text);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.dashboard__summary-card--invoices .dashboard__summary-breakdown {
+  grid-template-columns: 1fr;
 }
 
 .dashboard__amount {
   margin: 0;
   color: var(--color-text);
-  font-size: var(--font-size-2xl);
-  font-weight: var(--font-weight-semibold);
+  font-size: clamp(var(--font-size-2xl), 5vw, 2.25rem);
+  font-weight: var(--font-weight-bold);
   line-height: var(--line-height-tight);
 }
 
@@ -407,7 +470,7 @@
 
   .dashboard__skeletons,
   .dashboard__indicators {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     grid-auto-rows: 1fr;
   }
 

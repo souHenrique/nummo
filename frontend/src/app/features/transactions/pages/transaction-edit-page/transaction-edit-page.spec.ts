@@ -8,6 +8,7 @@ import { AccountApiService } from '../../../accounts/data-access/account-api.ser
 import { Account } from '../../../accounts/models/account.models';
 import { CategoryApiService } from '../../../categories/data-access/category-api.service';
 import { Category } from '../../../categories/models/category.models';
+import { CreditCardApiService } from '../../../credit-cards/data-access/credit-card-api.service';
 import { TransactionFormComponent } from '../../components/transaction-form/transaction-form';
 import { TransactionApiService } from '../../data-access/transaction-api.service';
 import { Transaction, UpdateTransactionRequest } from '../../models/transaction.models';
@@ -81,6 +82,10 @@ describe('TransactionEditPage', () => {
           useValue: { snapshot: { paramMap: convertToParamMap({ id: transaction.id }) } },
         },
         { provide: TransactionApiService, useValue: transactionApi },
+        {
+          provide: CreditCardApiService,
+          useValue: { updatePurchase: vi.fn().mockReturnValue(of([])) },
+        },
         {
           provide: AccountApiService,
           useValue: { findAll: vi.fn().mockReturnValue(of([account])) },
@@ -157,5 +162,21 @@ describe('TransactionEditPage', () => {
 
     expect(fixture.debugElement.query(By.directive(TransactionFormComponent))).toBeNull();
     expect(fixture.nativeElement.textContent).toContain('Edição indisponível');
+  });
+
+  it('renders the edit form for a credit card purchase', () => {
+    transactionApi.findById.mockReturnValue(
+      of({
+        ...transaction,
+        type: 'CREDIT_CARD_PURCHASE',
+        paymentMethod: 'CREDIT_CARD',
+        creditCardId: 'ef2e3d4c-5b6a-7980-1234-56789abcdef0',
+      }),
+    );
+    createPage();
+
+    expect(
+      fixture.nativeElement.querySelector('.transaction-edit-page__purchase-form'),
+    ).not.toBeNull();
   });
 });

@@ -6,6 +6,7 @@ import { ApiUrlService } from '../../../core/http/api-url.service';
 import { Transaction } from '../../transactions/models/transaction.models';
 import {
   CreateCreditCardPurchaseRequest,
+  UpdateCreditCardPurchaseRequest,
   CreateCreditCardRequest,
   CreditCard,
   CreditCardRefund,
@@ -40,6 +41,19 @@ export class CreditCardApiService {
   createPurchase(id: string, request: CreateCreditCardPurchaseRequest): Observable<Transaction[]> {
     return this.http.post<Transaction[]>(
       this.apiUrl.build(`credit-cards/${encodeURIComponent(id)}/purchases`),
+      request,
+    );
+  }
+
+  updatePurchase(
+    creditCardId: string,
+    transactionId: string,
+    request: UpdateCreditCardPurchaseRequest,
+  ): Observable<Transaction[]> {
+    return this.http.patch<Transaction[]>(
+      this.apiUrl.build(
+        `credit-cards/${encodeURIComponent(creditCardId)}/purchases/${encodeURIComponent(transactionId)}`,
+      ),
       request,
     );
   }

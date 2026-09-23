@@ -522,6 +522,47 @@ public interface InvoiceApiDocs {
     );
 
     @Operation(
+            summary = "Reabrir fatura",
+            description = """
+                Reabre uma fatura CLOSED ou PAID pertencente ao usuário autenticado.
+
+                Quando a fatura já estiver paga, o pagamento é revertido na mesma
+                operação: o débito da conta é desfeito, créditos aplicados voltam a
+                ficar disponíveis, o limite do cartão é recomposto e o registro de
+                pagamento é mantido como cancelado no histórico.
+
+                A operação não é permitida se compras posteriores já tiverem usado
+                o limite que precisaria ser recomposto.
+                """,
+            requestBody = @RequestBody(
+                    required = true,
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = CloseInvoiceRequest.class)
+                    )
+            )
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Fatura reaberta e pronta para correções.",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = InvoiceSummaryResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "409",
+                    description = "Status, versão ou dados financeiros incompatíveis.",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ApiError.class)
+                    )
+            )
+    })
+    ResponseEntity<InvoiceSummaryResponse> reopen(UUID id, @Valid CloseInvoiceRequest request);
+
+    @Operation(
             summary = "Quitar fatura",
             description = """
                 Quita integralmente uma fatura CLOSED pertencente

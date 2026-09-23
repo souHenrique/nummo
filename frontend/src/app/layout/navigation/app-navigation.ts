@@ -1,7 +1,21 @@
+import {
+  LucideArrowLeftRight,
+  LucideChartNoAxesCombined,
+  LucideCircleDollarSign,
+  LucideCreditCard,
+  LucideFileText,
+  LucideLandmark,
+  LucideLayoutDashboard,
+  LucideReceiptText,
+  LucideTags,
+  LucideUserRound,
+  type LucideIcon,
+} from '@lucide/angular';
+
 export interface NavigationItem {
   readonly label: string;
   readonly route: string;
-  readonly symbol: string;
+  readonly icon: LucideIcon;
   readonly exact?: boolean;
 }
 
@@ -9,53 +23,53 @@ export const APP_NAVIGATION: readonly NavigationItem[] = [
   {
     label: 'Dashboard',
     route: '/dashboard',
-    symbol: '⌂',
+    icon: LucideLayoutDashboard,
     exact: true,
   },
   {
     label: 'Transações',
     route: '/transactions',
-    symbol: '↕',
+    icon: LucideReceiptText,
   },
   {
     label: 'Nova transferência',
     route: '/transfers/new',
-    symbol: '⇄',
+    icon: LucideArrowLeftRight,
     exact: true,
   },
   {
     label: 'Contas',
     route: '/accounts',
-    symbol: '▣',
+    icon: LucideLandmark,
   },
   {
     label: 'Categorias',
     route: '/categories',
-    symbol: '◈',
+    icon: LucideTags,
   },
   {
     label: 'Cartões',
     route: '/credit-cards',
-    symbol: '▤',
+    icon: LucideCreditCard,
   },
   {
     label: 'Faturas',
     route: '/invoices',
-    symbol: '▧',
+    icon: LucideFileText,
   },
   {
     label: 'Orçamentos',
     route: '/budgets',
-    symbol: '◎',
+    icon: LucideCircleDollarSign,
   },
   {
     label: 'Relatórios',
     route: '/reports',
-    symbol: '▥',
+    icon: LucideChartNoAxesCombined,
   },
   {
     label: 'Perfil',
     route: '/profile',
-    symbol: '●',
+    icon: LucideUserRound,
   },
 ];

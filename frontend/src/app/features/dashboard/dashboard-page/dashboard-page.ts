@@ -19,18 +19,12 @@ import {
   AnnualCashFlow,
   AnnualCashFlowMonth,
   CategoryCashFlow,
-  MonthlyCashFlow,
+  CompetenceReport,
 } from '../../reports/models/report.models';
 import { DashboardApiService } from '../data-access/dashboard-api.service';
-import { Dashboard, DashboardBudgetItem, DashboardIndicator } from '../models/dashboard.models';
+import { Dashboard, DashboardBudgetItem } from '../models/dashboard.models';
 
 type DashboardState = 'loading' | 'success' | 'error';
-
-interface IndicatorCard {
-  title: string;
-  description: string;
-  indicator: DashboardIndicator;
-}
 
 interface FlowTooltip {
   month: AnnualCashFlowMonth;
@@ -76,12 +70,12 @@ export class DashboardPage implements OnInit {
   readonly dashboard = signal<Dashboard | null>(null);
   readonly categories = signal<Category[]>([]);
   readonly annualCashFlow = signal<AnnualCashFlow | null>(null);
-  readonly monthlyCashFlow = signal<MonthlyCashFlow | null>(null);
+  readonly monthlyCompetenceReport = signal<CompetenceReport | null>(null);
   readonly selectedFlow = signal<FlowTooltip | null>(null);
   readonly selectedCategory = signal<CategorySegment | null>(null);
 
   readonly categoryExpenses = computed(
-    () => this.monthlyCashFlow()?.summary.expenseCategories ?? [],
+    () => this.monthlyCompetenceReport()?.expenseCategories ?? [],
   );
 
   readonly categorySegments = computed<CategorySegment[]>(() => {
@@ -107,47 +101,6 @@ export class DashboardPage implements OnInit {
     });
   });
 
-  readonly indicatorCards = computed<IndicatorCard[]>(() => {
-    const dashboard = this.dashboard();
-
-    if (!dashboard) {
-      return [];
-    }
-
-    const cards: IndicatorCard[] = [
-      {
-        title: 'Saldo',
-        description: 'Entradas menos todas as saídas do mês, incluindo a fatura de referência.',
-        indicator: dashboard.monthlyBalance,
-      },
-      {
-        title: 'Entradas mensais',
-        description: 'Total acumulado de entradas efetivadas no mês de referência.',
-        indicator: dashboard.monthlyInflows,
-      },
-      {
-        title: 'Saídas mensais',
-        description: 'Saídas de caixa efetivadas no mês de referência.',
-        indicator: dashboard.monthlyOutflows,
-      },
-      {
-        title: 'Total de faturas abertas',
-        description: 'Valor atual de todas as faturas em aberto.',
-        indicator: dashboard.openInvoices,
-      },
-    ];
-
-    if (dashboard.monthlyOpenInvoices) {
-      cards.push({
-        title: 'Faturas abertas do mês',
-        description: 'Valor em aberto das faturas referentes ao mês exibido.',
-        indicator: dashboard.monthlyOpenInvoices,
-      });
-    }
-
-    return cards;
-  });
-
   ngOnInit(): void {
     this.loadDashboard();
   }
@@ -163,21 +116,21 @@ export class DashboardPage implements OnInit {
             dashboard: of(dashboard),
             categories: this.categoryApi.findAll().pipe(catchError(() => of([]))),
             annualCashFlow: this.reportApi
-              .getAnnual(dashboard.year)
+              .getCompetenceAnnual(dashboard.year)
               .pipe(catchError(() => of(null))),
-            monthlyCashFlow: this.reportApi
-              .getMonthly(dashboard.year, dashboard.month)
+            monthlyCompetenceReport: this.reportApi
+              .getCompetence(dashboard.periodStart, dashboard.periodEnd)
               .pipe(catchError(() => of(null))),
           }),
         ),
       )
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: ({ dashboard, categories, annualCashFlow, monthlyCashFlow }) => {
+        next: ({ dashboard, categories, annualCashFlow, monthlyCompetenceReport }) => {
           this.dashboard.set(dashboard);
           this.categories.set(categories);
           this.annualCashFlow.set(annualCashFlow);
-          this.monthlyCashFlow.set(monthlyCashFlow);
+          this.monthlyCompetenceReport.set(monthlyCompetenceReport);
           this.state.set('success');
         },
         error: () => this.state.set('error'),

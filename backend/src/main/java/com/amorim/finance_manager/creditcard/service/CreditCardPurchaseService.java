@@ -5,9 +5,11 @@ import com.amorim.finance_manager.category.entity.CategoryStatus;
 import com.amorim.finance_manager.category.entity.CategoryType;
 import com.amorim.finance_manager.category.repository.CategoryRepository;
 import com.amorim.finance_manager.creditcard.dto.CreateCreditCardPurchaseRequest;
+import com.amorim.finance_manager.creditcard.dto.UpdateCreditCardPurchaseRequest;
 import com.amorim.finance_manager.creditcard.entity.CreditCard;
 import com.amorim.finance_manager.creditcard.entity.CreditCardStatus;
 import com.amorim.finance_manager.creditcard.repository.CreditCardRepository;
+import com.amorim.finance_manager.creditcard.repository.CreditCardRefundItemRepository;
 import com.amorim.finance_manager.invoice.entity.Invoice;
 import com.amorim.finance_manager.invoice.entity.InvoiceStatus;
 import com.amorim.finance_manager.invoice.repository.InvoiceRepository;
@@ -43,6 +45,7 @@ public class CreditCardPurchaseService {
     private final TransactionMapper transactionMapper;
     private final CurrentUserService currentUserService;
     private final InstallmentCalculator installmentCalculator;
+    private final CreditCardRefundItemRepository refundItemRepository;
 
     @Transactional
     public List<TransactionResponse> create(
@@ -73,7 +76,7 @@ public class CreditCardPurchaseService {
                 card.getDueDay()
         );
 
-        consumeLimit(card, request);
+        consumeLimit(card, request.amount());
         creditCardRepository.saveAndFlush(card);
 
         UUID installmentGroupId = UUID.randomUUID();
@@ -146,6 +149,68 @@ public class CreditCardPurchaseService {
                 .toList();
     }
 
+    @Transactional
+    public List<TransactionResponse> update(
+            UUID creditCardId,
+            UUID transactionId,
+            UpdateCreditCardPurchaseRequest request
+    ) {
+        UUID userId = currentUserService.getCurrentUserId();
+        CreditCard card = creditCardRepository.findByIdAndUserId(creditCardId, userId)
+                .orElseThrow(CreditCardNotFoundException::new);
+        validateCard(card);
+
+        Transaction selected = transactionRepository.findByIdAndUserId(transactionId, userId)
+                .orElseThrow(TransactionNotFoundException::new);
+        if (selected.getType() != TransactionType.CREDIT_CARD_PURCHASE
+                || !creditCardId.equals(selected.getCreditCardId())) {
+            throw new TransactionNotFoundException();
+        }
+
+        List<Transaction> installments = selected.getInstallmentGroupId() == null
+                ? List.of(selected)
+                : transactionRepository
+                        .findAllByInstallmentGroupIdAndCreditCardIdAndUserIdOrderByInstallmentNumberAsc(
+                                selected.getInstallmentGroupId(), creditCardId, userId);
+        if (installments.isEmpty()
+                || installments.stream().anyMatch(item -> item.getStatus() != TransactionStatus.COMPLETED
+                        || item.getInvoiceId() == null)
+                || refundItemRepository.existsByOriginalTransactionIdIn(
+                        installments.stream().map(Transaction::getId).toList())) {
+            throw new InvalidTransactionException("Esta compra não pode mais ser alterada");
+        }
+
+        Category category = categoryRepository.findByIdAndUserId(request.categoryId(), userId)
+                .orElseThrow(CategoryNotFoundException::new);
+        validateCategory(category);
+
+        BigDecimal previousAmount = BigDecimal.ZERO;
+        List<Invoice> invoices = new ArrayList<>();
+        for (Transaction installment : installments) {
+            Invoice invoice = invoiceRepository.findById(installment.getInvoiceId())
+                    .orElseThrow(InvalidInvoiceStatusException::new);
+            if (invoice.getStatus() != InvoiceStatus.OPEN) {
+                throw new InvalidInvoiceStatusException();
+            }
+            invoice.setTotalAmount(invoice.getTotalAmount().subtract(installment.getAmount()));
+            invoices.add(invoice);
+            previousAmount = previousAmount.add(installment.getAmount());
+        }
+
+        card.setAvailableLimit(card.getAvailableLimit().add(previousAmount));
+        invoiceRepository.saveAllAndFlush(invoices);
+        creditCardRepository.saveAndFlush(card);
+        transactionRepository.deleteAll(installments);
+        transactionRepository.flush();
+
+        List<TransactionResponse> updated = create(creditCardId, new CreateCreditCardPurchaseRequest(
+                request.description(), request.amount(), request.purchaseDate(),
+                request.categoryId(), request.installmentCount()));
+        log.info("event=credit_card.purchase_updated transactionId={} creditCardId={} userId={}",
+                transactionId, creditCardId, userId);
+        return updated;
+    }
+
     private void validateCard(CreditCard card) {
         if (card.getStatus() != CreditCardStatus.ACTIVE) {
             throw new InvalidCreditCardStatusException();
@@ -164,18 +229,15 @@ public class CreditCardPurchaseService {
         }
     }
 
-    private void consumeLimit(
-            CreditCard card,
-            CreateCreditCardPurchaseRequest request
-    ) {
-        if (card.getAvailableLimit().compareTo(request.amount()) < 0) {
+    private void consumeLimit(CreditCard card, BigDecimal amount) {
+        if (card.getAvailableLimit().compareTo(amount) < 0) {
             throw new CreditLimitConflictException(
                     "Limite disponível insuficiente para realizar a compra"
             );
         }
 
         card.setAvailableLimit(
-                card.getAvailableLimit().subtract(request.amount())
+                card.getAvailableLimit().subtract(amount)
         );
     }
 

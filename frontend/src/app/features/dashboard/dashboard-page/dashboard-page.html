@@ -36,15 +36,47 @@
     />
   } @else if (dashboard(); as data) {
     <section class="dashboard__indicators" aria-label="Indicadores financeiros">
-      @for (card of indicatorCards(); track card.title) {
-        <app-card
-          class="dashboard__indicator-card"
-          [title]="card.title"
-          [subtitle]="card.description"
-        >
-          <p class="dashboard__amount">{{ card.indicator.amount | currency: 'BRL' }}</p>
-        </app-card>
-      }
+      <app-card
+        class="dashboard__summary-card dashboard__summary-card--balance"
+        title="Saldo"
+        subtitle="Entradas e pagamentos efetivados nas contas durante o mês."
+      >
+        <div class="dashboard__summary-main">
+          <span>Saldo do mês</span>
+          <p class="dashboard__amount">{{ data.monthlyBalance.amount | currency: 'BRL' }}</p>
+        </div>
+
+        <dl class="dashboard__summary-breakdown">
+          <div>
+            <dt>Entradas mensais</dt>
+            <dd>{{ data.monthlyInflows.amount | currency: 'BRL' }}</dd>
+          </div>
+          <div>
+            <dt>Saídas mensais</dt>
+            <dd>{{ data.monthlyOutflows.amount | currency: 'BRL' }}</dd>
+          </div>
+        </dl>
+      </app-card>
+
+      <app-card
+        class="dashboard__summary-card dashboard__summary-card--invoices"
+        title="Faturas abertas do mês"
+        subtitle="Valor em aberto das faturas referentes ao mês exibido."
+      >
+        <div class="dashboard__summary-main">
+          <span>Em aberto neste mês</span>
+          <p class="dashboard__amount">
+            {{ data.monthlyOpenInvoices?.amount ?? 0 | currency: 'BRL' }}
+          </p>
+        </div>
+
+        <dl class="dashboard__summary-breakdown">
+          <div>
+            <dt>Total de faturas abertas</dt>
+            <dd>{{ data.openInvoices.amount | currency: 'BRL' }}</dd>
+          </div>
+        </dl>
+      </app-card>
     </section>
 
     <section class="dashboard__charts" aria-label="Visão gráfica das movimentações">

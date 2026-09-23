@@ -60,15 +60,10 @@
             <dd>R$ {{ currentInvoice.totalAmount | number: '1.2-2' }}</dd>
           </div>
 
-          <div>
-            <dt>Versão</dt>
-            <dd>{{ currentInvoice.version }}</dd>
-          </div>
-
           @if (currentInvoice.paidAt) {
             <div>
               <dt>Pagamento registrado</dt>
-              <dd>{{ currentInvoice.paidAt }}</dd>
+              <dd>{{ formatDate(currentInvoice.paidAt.slice(0, 10)) }}</dd>
             </div>
           }
         </dl>
@@ -89,8 +84,17 @@
           }
 
           @if (currentInvoice.status === 'CLOSED') {
+            <app-button variant="secondary" [disabled]="isProcessing()" (pressed)="reopenInvoice()">
+              Reabrir fatura
+            </app-button>
             <app-button [disabled]="isProcessing()" (pressed)="openPaymentForm()">
               Pagar fatura
+            </app-button>
+          }
+
+          @if (currentInvoice.status === 'PAID') {
+            <app-button variant="secondary" [disabled]="isProcessing()" (pressed)="reopenInvoice()">
+              Reabrir fatura
             </app-button>
           }
         </div>
@@ -122,6 +126,10 @@
                   }
                 </select>
               </app-form-field>
+
+              <app-form-field label="Data do pagamento" controlId="payment-date" [required]="true">
+                <input appInput id="payment-date" type="date" formControlName="paymentDate" />
+              </app-form-field>
             </fieldset>
 
             <div class="invoice-detail__payment-actions">
@@ -150,7 +158,7 @@
         <app-alert
           tone="success"
           title="Fatura quitada"
-          message="O pagamento já foi registrado. Não há novas ações financeiras disponíveis."
+          message="O pagamento já foi registrado. Reabra a fatura caso precise corrigir compras ou parcelas."
         />
       }
 
@@ -196,18 +204,18 @@
               <tbody>
                 @for (transaction of currentInvoice.transactions; track transaction.id) {
                   <tr>
-                    <td>{{ formatDate(transaction.competenceDate) }}</td>
-                    <td>{{ transaction.description }}</td>
-                    <td>{{ transactionTypeLabel(transaction.type) }}</td>
-                    <td>{{ installmentLabel(transaction) }}</td>
-                    <td>
+                    <td data-label="Data">{{ formatDate(transaction.competenceDate) }}</td>
+                    <td data-label="Descrição">{{ transaction.description }}</td>
+                    <td data-label="Tipo">{{ transactionTypeLabel(transaction.type) }}</td>
+                    <td data-label="Parcela">{{ installmentLabel(transaction) }}</td>
+                    <td data-label="Status">
                       <app-badge
                         [label]="transactionStatusLabel(transaction.status)"
                         [tone]="transactionStatusTone(transaction.status)"
                       />
                     </td>
-                    <td>R$ {{ transaction.amount | number: '1.2-2' }}</td>
-                    <td>
+                    <td data-label="Valor">R$ {{ transaction.amount | number: '1.2-2' }}</td>
+                    <td data-label="Ações">
                       @if (isRefundEligible(transaction)) {
                         <app-button
                           size="sm"

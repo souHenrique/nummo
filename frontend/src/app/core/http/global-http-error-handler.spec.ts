@@ -58,7 +58,6 @@ describe('GlobalHttpErrorHandler', () => {
       tone: 'warning',
       title: 'Sessão encerrada',
       message: 'Entre novamente para continuar.',
-      durationMs: 0,
     });
   });
 

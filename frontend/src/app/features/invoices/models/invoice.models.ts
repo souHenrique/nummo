@@ -36,6 +36,7 @@ export interface CloseInvoiceRequest {
 
 export interface PayInvoiceRequest {
   sourceAccountId?: string | null;
+  paymentDate: string;
   expectedVersion: number;
 }
 

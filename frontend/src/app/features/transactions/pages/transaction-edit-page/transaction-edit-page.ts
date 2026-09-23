@@ -1,4 +1,5 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { finalize, forkJoin } from 'rxjs';
 
@@ -12,6 +13,8 @@ import { AccountApiService } from '../../../accounts/data-access/account-api.ser
 import { Account } from '../../../accounts/models/account.models';
 import { CategoryApiService } from '../../../categories/data-access/category-api.service';
 import { Category } from '../../../categories/models/category.models';
+import { CreditCardApiService } from '../../../credit-cards/data-access/credit-card-api.service';
+import { UpdateCreditCardPurchaseRequest } from '../../../credit-cards/models/credit-card.models';
 import { TransactionFormComponent } from '../../components/transaction-form/transaction-form';
 import { TransactionApiService } from '../../data-access/transaction-api.service';
 import {
@@ -22,12 +25,14 @@ import {
 
 @Component({
   selector: 'app-transaction-edit-page',
-  imports: [Alert, Button, ErrorState, Skeleton, TransactionFormComponent],
+  imports: [Alert, Button, ErrorState, ReactiveFormsModule, Skeleton, TransactionFormComponent],
   templateUrl: './transaction-edit-page.html',
   styleUrl: './transaction-edit-page.scss',
 })
 export class TransactionEditPage implements OnInit {
   private readonly accountApi = inject(AccountApiService);
+  private readonly formBuilder = inject(FormBuilder);
+  private readonly creditCardApi = inject(CreditCardApiService);
   private readonly categoryApi = inject(CategoryApiService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -43,6 +48,13 @@ export class TransactionEditPage implements OnInit {
   readonly isLoading = signal(true);
   readonly isSubmitting = signal(false);
   readonly transaction = signal<Transaction | null>(null);
+  readonly purchaseForm = this.formBuilder.group({
+    description: ['', [Validators.required, Validators.maxLength(255)]],
+    amount: [null as number | null, [Validators.required, Validators.min(0.01)]],
+    purchaseDate: ['', Validators.required],
+    categoryId: ['', Validators.required],
+    installmentCount: [1, [Validators.required, Validators.min(1)]],
+  });
 
   ngOnInit(): void {
     this.loadData();
@@ -66,6 +78,15 @@ export class TransactionEditPage implements OnInit {
       .subscribe({
         next: ({ transaction, accounts, categories }) => {
           this.transaction.set(transaction);
+          if (this.isCreditCardPurchase(transaction)) {
+            this.purchaseForm.patchValue({
+              description: transaction.description,
+              amount: transaction.amount * (transaction.installmentCount ?? 1),
+              purchaseDate: transaction.competenceDate,
+              categoryId: transaction.categoryId ?? '',
+              installmentCount: transaction.installmentCount ?? 1,
+            });
+          }
 
           this.accounts.set(
             [...accounts].sort((first, second) => first.name.localeCompare(second.name, 'pt-BR')),
@@ -129,6 +150,35 @@ export class TransactionEditPage implements OnInit {
       });
   }
 
+  updatePurchase(): void {
+    const transaction = this.transaction();
+    if (!transaction || !this.transactionId || !transaction.creditCardId || this.isSubmitting())
+      return;
+    if (this.purchaseForm.invalid) {
+      this.purchaseForm.markAllAsTouched();
+      return;
+    }
+    this.isSubmitting.set(true);
+    this.creditCardApi
+      .updatePurchase(
+        transaction.creditCardId,
+        this.transactionId,
+        this.purchaseForm.getRawValue() as UpdateCreditCardPurchaseRequest,
+      )
+      .pipe(finalize(() => this.isSubmitting.set(false)))
+      .subscribe({
+        next: (transactions) => {
+          const updated = transactions[0];
+          this.toast.show({
+            tone: 'success',
+            title: 'Compra atualizada',
+            message: 'As alterações foram salvas.',
+          });
+          void this.router.navigate(['/transactions', updated.id]);
+        },
+      });
+  }
+
   reloadAfterConflict(): void {
     this.hasConflict.set(false);
     this.loadData();
@@ -141,10 +191,11 @@ export class TransactionEditPage implements OnInit {
   }
 
   isEditable(transaction: Transaction): boolean {
-    return (
-      transaction.status !== 'CANCELLED' &&
-      (transaction.type === 'INCOME' || transaction.type === 'EXPENSE')
-    );
+    return transaction.status !== 'CANCELLED';
+  }
+
+  isCreditCardPurchase(transaction: Transaction): boolean {
+    return transaction.type === 'CREDIT_CARD_PURCHASE';
   }
 
   private isCreateTransactionRequest(

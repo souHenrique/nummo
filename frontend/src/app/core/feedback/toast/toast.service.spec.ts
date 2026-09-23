@@ -30,7 +30,7 @@ describe('ToastService', () => {
         title: undefined,
         message: 'Dados carregados',
         tone: 'info',
-        durationMs: 6000,
+        durationMs: 5000,
       },
     ]);
   });
@@ -38,12 +38,10 @@ describe('ToastService', () => {
   it('should generate sequential identifiers', () => {
     const firstId = service.show({
       message: 'Primeiro',
-      durationMs: 0,
     });
 
     const secondId = service.show({
       message: 'Segundo',
-      durationMs: 0,
     });
 
     expect(firstId).toBe(1);
@@ -58,7 +56,7 @@ describe('ToastService', () => {
 
     expect(service.messages()).toHaveLength(1);
 
-    vi.advanceTimersByTime(5999);
+    vi.advanceTimersByTime(4999);
 
     expect(service.messages()).toHaveLength(1);
 
@@ -67,23 +65,20 @@ describe('ToastService', () => {
     expect(service.messages()).toHaveLength(0);
   });
 
-  it('should keep danger toasts visible by default', () => {
+  it('should remove danger toasts after five seconds', () => {
     service.show({
       message: 'Não foi possível salvar',
       tone: 'danger',
     });
 
-    vi.advanceTimersByTime(60_000);
+    vi.advanceTimersByTime(5000);
 
-    expect(service.messages()).toHaveLength(1);
-    expect(service.messages()[0]?.tone).toBe('danger');
-    expect(service.messages()[0]?.durationMs).toBe(0);
+    expect(service.messages()).toEqual([]);
   });
 
   it('should remove a toast manually', () => {
     const id = service.show({
       message: 'Mensagem removível',
-      durationMs: 0,
     });
 
     service.remove(id);
@@ -94,12 +89,10 @@ describe('ToastService', () => {
   it('should remove every toast when clear is called', () => {
     service.show({
       message: 'Primeiro',
-      durationMs: 0,
     });
 
     service.show({
       message: 'Segundo',
-      durationMs: 0,
     });
 
     service.clear();
@@ -107,14 +100,13 @@ describe('ToastService', () => {
     expect(service.messages()).toEqual([]);
   });
 
-  it('should cancel the timer when a toast is removed manually', () => {
+  it('should cancel the five-second timer when a toast is removed manually', () => {
     const id = service.show({
       message: 'Mensagem temporária',
-      durationMs: 1000,
     });
 
     service.remove(id);
-    vi.advanceTimersByTime(1000);
+    vi.advanceTimersByTime(5000);
 
     expect(service.messages()).toEqual([]);
   });

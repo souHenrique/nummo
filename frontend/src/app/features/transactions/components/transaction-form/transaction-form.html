@@ -15,7 +15,7 @@
         <input
           appInput
           id="transaction-type-readonly"
-          [value]="selectedType() === 'INCOME' ? 'Receita' : 'Despesa'"
+          [value]="typeLabel(selectedType())"
           readonly
         />
       </app-form-field>
@@ -31,52 +31,56 @@
       />
     </app-form-field>
 
-    <app-form-field label="Valor" controlId="transaction-amount">
-      <input appInput appCurrencyInput id="transaction-amount" formControlName="amount" />
-    </app-form-field>
+    @if (!isCardManagedEdit()) {
+      <app-form-field label="Valor" controlId="transaction-amount">
+        <input appInput appCurrencyInput id="transaction-amount" formControlName="amount" />
+      </app-form-field>
 
-    <app-form-field label="Data" controlId="competence-date">
-      <input appInput id="competence-date" type="date" formControlName="competenceDate" />
-    </app-form-field>
+      <app-form-field label="Data" controlId="competence-date">
+        <input appInput id="competence-date" type="date" formControlName="competenceDate" />
+      </app-form-field>
 
-    <app-form-field label="Status" controlId="transaction-status">
-      <select
-        appSelect
-        id="transaction-status"
-        formControlName="status"
-        (change)="onStatusChange()"
-      >
-        @for (status of statuses; track status.value) {
-          <option [value]="status.value">{{ status.label }}</option>
-        }
-      </select>
-    </app-form-field>
+      <app-form-field label="Status" controlId="transaction-status">
+        <select
+          appSelect
+          id="transaction-status"
+          formControlName="status"
+          (change)="onStatusChange()"
+        >
+          @for (status of statuses; track status.value) {
+            <option [value]="status.value">{{ status.label }}</option>
+          }
+        </select>
+      </app-form-field>
 
-    @if (form.controls.status.value === 'COMPLETED') {
-      <app-form-field label="Data efetiva" controlId="effective-date">
-        <input appInput id="effective-date" type="date" formControlName="effectiveDate" />
+      @if (form.controls.status.value === 'COMPLETED') {
+        <app-form-field label="Data efetiva" controlId="effective-date">
+          <input appInput id="effective-date" type="date" formControlName="effectiveDate" />
+        </app-form-field>
+      }
+
+      <app-form-field label="Forma de pagamento" controlId="payment-method">
+        <select appSelect id="payment-method" formControlName="paymentMethod">
+          @for (method of paymentMethods; track method.value) {
+            <option [value]="method.value">{{ method.label }}</option>
+          }
+        </select>
       </app-form-field>
     }
 
-    <app-form-field label="Forma de pagamento" controlId="payment-method">
-      <select appSelect id="payment-method" formControlName="paymentMethod">
-        @for (method of paymentMethods; track method.value) {
-          <option [value]="method.value">{{ method.label }}</option>
-        }
-      </select>
-    </app-form-field>
+    @if (canEditCategory()) {
+      <app-form-field label="Categoria" controlId="transaction-category">
+        <select appSelect id="transaction-category" formControlName="categoryId">
+          <option value="">Selecione</option>
 
-    <app-form-field label="Categoria" controlId="transaction-category">
-      <select appSelect id="transaction-category" formControlName="categoryId">
-        <option value="">Selecione</option>
+          @for (category of visibleCategories(); track category.id) {
+            <option [value]="category.id">{{ category.name }}</option>
+          }
+        </select>
+      </app-form-field>
+    }
 
-        @for (category of visibleCategories(); track category.id) {
-          <option [value]="category.id">{{ category.name }}</option>
-        }
-      </select>
-    </app-form-field>
-
-    @if (selectedType() === 'INCOME') {
+    @if (!isCardManagedEdit() && selectedType() === 'INCOME') {
       <app-form-field label="Conta de destino" controlId="destination-account">
         <select appSelect id="destination-account" formControlName="destinationAccountId">
           <option value="">Selecione</option>
@@ -88,7 +92,7 @@
       </app-form-field>
     }
 
-    @if (selectedType() === 'EXPENSE') {
+    @if (!isCardManagedEdit() && selectedType() === 'EXPENSE') {
       <app-form-field label="Conta de origem" controlId="source-account">
         <select appSelect id="source-account" formControlName="sourceAccountId">
           <option value="">Selecione</option>

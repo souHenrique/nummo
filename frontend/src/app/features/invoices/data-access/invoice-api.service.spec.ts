@@ -169,9 +169,26 @@ describe('InvoiceApiService', () => {
     request.flush(response);
   });
 
+  it('deve reabrir uma fatura com a versão esperada', () => {
+    const payload: CloseInvoiceRequest = { expectedVersion: 1 };
+    const response: InvoiceSummary = { ...invoice, status: 'OPEN', version: 2 };
+
+    service.reopen(invoice.id, payload).subscribe((result) => {
+      expect(result).toEqual(response);
+    });
+
+    const request = httpMock.expectOne(`/api/v1/invoices/${invoice.id}/reopen`);
+
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual(payload);
+
+    request.flush(response);
+  });
+
   it('deve pagar uma fatura com a versão esperada', () => {
     const payload: PayInvoiceRequest = {
       sourceAccountId: '0f6d7313-77f8-4b48-a63d-5338dd95461e',
+      paymentDate: '2026-09-28',
       expectedVersion: 1,
     };
     const response: InvoicePayment = {

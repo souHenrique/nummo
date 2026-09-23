@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { ApiUrlService } from '../../../core/http/api-url.service';
 import {
   AnnualCashFlow,
+  AnnualCompetenceReport,
   CompetenceReport,
   DailyCashFlow,
   MonthlyCashFlow,
@@ -35,6 +36,12 @@ export class ReportApiService {
 
   getAnnual(year: number): Observable<AnnualCashFlow> {
     return this.http.get<AnnualCashFlow>(this.apiUrl.build('reports/cash/annual'), {
+      params: new HttpParams().set('year', String(year)),
+    });
+  }
+
+  getCompetenceAnnual(year: number): Observable<AnnualCompetenceReport> {
+    return this.http.get<AnnualCompetenceReport>(this.apiUrl.build('reports/competence/annual'), {
       params: new HttpParams().set('year', String(year)),
     });
   }

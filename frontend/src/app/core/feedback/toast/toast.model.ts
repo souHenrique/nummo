@@ -12,5 +12,4 @@ export interface ShowToastOptions {
   title?: string;
   message: string;
   tone?: ToastTone;
-  durationMs?: number;
 }

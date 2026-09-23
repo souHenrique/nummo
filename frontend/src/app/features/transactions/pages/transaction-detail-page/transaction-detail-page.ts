@@ -249,10 +249,7 @@ export class TransactionDetailPage implements OnInit {
   }
 
   isEditable(transaction: Transaction): boolean {
-    return (
-      transaction.status !== 'CANCELLED' &&
-      (transaction.type === 'INCOME' || transaction.type === 'EXPENSE')
-    );
+    return transaction.status !== 'CANCELLED';
   }
 
   isCancellationAllowed(transaction: Transaction): boolean {

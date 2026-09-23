@@ -113,6 +113,15 @@ public class InvoiceController implements InvoiceApiDocs {
     }
 
     @Override
+    @PostMapping("/invoices/{id}/reopen")
+    public ResponseEntity<InvoiceSummaryResponse> reopen(
+            @PathVariable UUID id,
+            @Valid @RequestBody CloseInvoiceRequest request
+    ) {
+        return ResponseEntity.ok(invoiceClosingService.reopen(id, request.expectedVersion()));
+    }
+
+    @Override
     @PostMapping("/invoices/{id}/pay")
     public ResponseEntity<InvoicePaymentResponse> pay(
             @PathVariable UUID id,

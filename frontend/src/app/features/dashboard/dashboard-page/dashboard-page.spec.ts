@@ -5,7 +5,7 @@ import { of, Subject, throwError } from 'rxjs';
 import { CategoryApiService } from '../../categories/data-access/category-api.service';
 import { Category } from '../../categories/models/category.models';
 import { ReportApiService } from '../../reports/data-access/report-api.service';
-import { AnnualCashFlow, MonthlyCashFlow } from '../../reports/models/report.models';
+import { AnnualCompetenceReport, CompetenceReport } from '../../reports/models/report.models';
 import { DashboardApiService } from '../data-access/dashboard-api.service';
 import { Dashboard } from '../models/dashboard.models';
 import { DashboardPage } from './dashboard-page';
@@ -15,7 +15,10 @@ describe('DashboardPage', () => {
   let component: DashboardPage;
   let dashboardApi: { get: ReturnType<typeof vi.fn> };
   let categoryApi: { findAll: ReturnType<typeof vi.fn> };
-  let reportApi: { getAnnual: ReturnType<typeof vi.fn>; getMonthly: ReturnType<typeof vi.fn> };
+  let reportApi: {
+    getCompetenceAnnual: ReturnType<typeof vi.fn>;
+    getCompetence: ReturnType<typeof vi.fn>;
+  };
   let router: { navigate: ReturnType<typeof vi.fn> };
 
   const categories: Category[] = [
@@ -80,7 +83,7 @@ describe('DashboardPage', () => {
     consolidatedBalance: { basis: 'CASH', amount: 7000 },
   };
 
-  const annualCashFlow: AnnualCashFlow = {
+  const annualCashFlow: AnnualCompetenceReport = {
     year: 2026,
     startDate: '2026-01-01',
     endDate: '2026-12-31',
@@ -94,30 +97,25 @@ describe('DashboardPage', () => {
     })),
   };
 
-  const monthlyCashFlow: MonthlyCashFlow = {
-    year: 2026,
-    month: 9,
+  const monthlyCashFlow: CompetenceReport = {
     startDate: '2026-09-01',
     endDate: '2026-09-30',
-    summary: {
-      inflows: 5000,
-      outflows: 1500,
-      net: 3500,
-      invoicePayments: 0,
-      incomeCategories: [],
-      expenseCategories: [
-        { categoryId: categories[0].id, name: 'Alimentação', amount: 1000 },
-        { categoryId: categories[1].id, name: 'Transporte', amount: 500 },
-      ],
-    },
+    totalIncome: 5000,
+    totalExpenses: 2250,
+    result: 2750,
+    incomeCategories: [],
+    expenseCategories: [
+      { categoryId: categories[0].id, name: 'Alimentação', amount: 1750 },
+      { categoryId: categories[1].id, name: 'Transporte', amount: 500 },
+    ],
   };
 
   beforeEach(async () => {
     dashboardApi = { get: vi.fn().mockReturnValue(of(dashboard)) };
     categoryApi = { findAll: vi.fn().mockReturnValue(of(categories)) };
     reportApi = {
-      getAnnual: vi.fn().mockReturnValue(of(annualCashFlow)),
-      getMonthly: vi.fn().mockReturnValue(of(monthlyCashFlow)),
+      getCompetenceAnnual: vi.fn().mockReturnValue(of(annualCashFlow)),
+      getCompetence: vi.fn().mockReturnValue(of(monthlyCashFlow)),
     };
     router = { navigate: vi.fn().mockResolvedValue(true) };
 
@@ -136,31 +134,30 @@ describe('DashboardPage', () => {
     fixture.detectChanges();
   });
 
-  it('should render only the daily-decision indicators without exposing accounting bases', () => {
+  it('should render grouped daily-decision indicators without exposing accounting bases', () => {
     const element = fixture.nativeElement as HTMLElement;
 
     expect(dashboardApi.get).toHaveBeenCalledOnce();
     expect(element.querySelector('h1')?.textContent).toContain('Dashboard financeiro');
     expect(element.textContent).toContain('Setembro de 2026');
 
-    for (const title of [
-      'Saldo',
-      'Entradas mensais',
-      'Saídas mensais',
-      'Total de faturas abertas',
-      'Faturas abertas do mês',
-      'Orçamento',
-      'Saldo consolidado',
-    ]) {
+    for (const title of ['Saldo', 'Faturas abertas do mês', 'Orçamento', 'Saldo consolidado']) {
       expect(element.textContent).toContain(title);
     }
+
+    expect(element.querySelector('.dashboard__summary-card--balance')?.textContent).toContain(
+      'Entradas mensais',
+    );
+    expect(element.querySelector('.dashboard__summary-card--balance')?.textContent).toContain(
+      'Saídas mensais',
+    );
+    expect(element.querySelector('.dashboard__summary-card--invoices')?.textContent).toContain(
+      'Total de faturas abertas',
+    );
 
     expect(element.textContent).not.toContain('CASH + FATURA');
     expect(element.textContent).not.toContain('DATA DA DESPESA');
     expect(element.textContent).not.toContain('Regime de caixa');
-    expect(element.textContent).toContain(
-      'Total acumulado de entradas efetivadas no mês de referência.',
-    );
   });
 
   it('should leave analytical indicators to reports and place the consolidated balance last', () => {
@@ -169,14 +166,8 @@ describe('DashboardPage', () => {
       element.querySelectorAll<HTMLElement>('.dashboard__indicators app-card h2'),
     ).map((title) => title.textContent?.trim());
 
-    expect(titles).toEqual([
-      'Saldo',
-      'Entradas mensais',
-      'Saídas mensais',
-      'Total de faturas abertas',
-      'Faturas abertas do mês',
-    ]);
-    expect(element.querySelectorAll('.dashboard__indicator-card')).toHaveLength(5);
+    expect(titles).toEqual(['Saldo', 'Faturas abertas do mês']);
+    expect(element.querySelectorAll('.dashboard__summary-card')).toHaveLength(2);
 
     expect(element.textContent).not.toContain('Saídas totais');
     expect(element.textContent).not.toContain('Saídas de compras no crédito');
@@ -199,8 +190,8 @@ describe('DashboardPage', () => {
   it('should render interactive monthly flow and category spending charts', () => {
     const element = fixture.nativeElement as HTMLElement;
 
-    expect(reportApi.getAnnual).toHaveBeenCalledWith(2026);
-    expect(reportApi.getMonthly).toHaveBeenCalledWith(2026, 9);
+    expect(reportApi.getCompetenceAnnual).toHaveBeenCalledWith(2026);
+    expect(reportApi.getCompetence).toHaveBeenCalledWith('2026-09-01', '2026-09-30');
     expect(element.textContent).toContain('Entradas e saídas por mês');
     expect(element.querySelectorAll('.dashboard__flow-month')).toHaveLength(12);
     expect(element.textContent).toContain('Gastos por categoria');
@@ -215,7 +206,7 @@ describe('DashboardPage', () => {
     fixture.detectChanges();
 
     expect(element.textContent).toContain('Set · Entradas: R$ 5.000,00');
-    expect(element.textContent).toContain('Alimentação: R$ 1.000,00 (66,67%)');
+    expect(element.textContent).toContain('Alimentação: R$ 1.750,00 (77,78%)');
   });
 
   it('should render the budget summary and explicit alert labels for each category', () => {
@@ -242,7 +233,8 @@ describe('DashboardPage', () => {
     const element = fixture.nativeElement as HTMLElement;
     expect(element.textContent).toContain('Orçamento');
     expect(element.textContent).toContain('Saldo consolidado');
-    expect(element.textContent).not.toContain('Faturas abertas do mês');
+    expect(element.textContent).toContain('Faturas abertas do mês');
+    expect(element.textContent).toContain('R$0.00');
   });
 
   it('should render loading, error and retry states', () => {
