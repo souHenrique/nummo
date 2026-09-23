@@ -15,6 +15,7 @@ import {
 import { Button } from '../../../../shared/ui/button/button';
 import { FormField } from '../../../../shared/ui/form-field/form-field';
 import { InputDirective } from '../../../../shared/ui/form-control/input';
+import { CurrencyInputDirective } from '../../../../shared/ui/form-control/currency-input';
 import { SelectDirective } from '../../../../shared/ui/form-control/select';
 
 export type TransactionFormMode = 'create' | 'edit';
@@ -23,7 +24,14 @@ type TransactionFormResult = CreateTransactionRequest | UpdateTransactionRequest
 
 @Component({
   selector: 'app-transaction-form',
-  imports: [ReactiveFormsModule, Button, FormField, InputDirective, SelectDirective],
+  imports: [
+    ReactiveFormsModule,
+    Button,
+    CurrencyInputDirective,
+    FormField,
+    InputDirective,
+    SelectDirective,
+  ],
   templateUrl: './transaction-form.html',
   styleUrl: './transaction-form.scss',
 })

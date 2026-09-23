@@ -3,6 +3,7 @@ package com.amorim.finance_manager.user.controller;
 import com.amorim.finance_manager.config.openapi.OpenApiConfig;
 import com.amorim.finance_manager.user.api.UserApiDocs;
 import com.amorim.finance_manager.user.dto.ChangePasswordRequest;
+import com.amorim.finance_manager.user.dto.ConfirmCurrentPasswordRequest;
 import com.amorim.finance_manager.user.dto.UpdateProfileRequest;
 import com.amorim.finance_manager.user.dto.UserResponse;
 import com.amorim.finance_manager.user.service.UserProfileService;
@@ -45,8 +46,10 @@ public class UserController implements UserApiDocs {
 
     @Override
     @DeleteMapping("/me")
-    public ResponseEntity<Void> deleteCurrentUser() {
-        userProfileService.deleteCurrentUser();
+    public ResponseEntity<Void> deleteCurrentUser(
+            @Valid @RequestBody ConfirmCurrentPasswordRequest request
+    ) {
+        userProfileService.deleteCurrentUser(request);
         return ResponseEntity.noContent().build();
     }
 }

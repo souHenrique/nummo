@@ -172,7 +172,8 @@ class UserProfileIntegrationTest {
 
         String body = """
                 {
-                  "email": "UPDATED@EXAMPLE.COM"
+                  "email": "UPDATED@EXAMPLE.COM",
+                  "currentPassword": "SenhaSegura123!"
                 }
                 """;
 
@@ -219,7 +220,8 @@ class UserProfileIntegrationTest {
 
         String body = """
                 {
-                  "email": "user-b@example.com"
+                  "email": "user-b@example.com",
+                  "currentPassword": "SenhaSegura123!"
                 }
                 """;
 
@@ -280,6 +282,51 @@ class UserProfileIntegrationTest {
                         delete("/api/v1/users/me")
                 )
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void shouldRejectEmailChangeWithoutCurrentPassword() throws Exception {
+        registerUser("User A", USER_A_EMAIL, PASSWORD);
+        String token = login(USER_A_EMAIL, PASSWORD);
+
+        mockMvc.perform(
+                        patch("/api/v1/users/me")
+                                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                        {
+                                          "email": "updated@example.com"
+                                        }
+                                        """)
+                )
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("INVALID_CURRENT_PASSWORD"));
+
+        assertThat(userRepository.findByEmail(USER_A_EMAIL)).isPresent();
+        assertThat(userRepository.findByEmail("updated@example.com")).isEmpty();
+    }
+
+    @Test
+    void shouldRejectEmailChangeWithIncorrectCurrentPassword() throws Exception {
+        registerUser("User A", USER_A_EMAIL, PASSWORD);
+        String token = login(USER_A_EMAIL, PASSWORD);
+
+        mockMvc.perform(
+                        patch("/api/v1/users/me")
+                                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                        {
+                                          "email": "updated@example.com",
+                                          "currentPassword": "SenhaIncorreta123!"
+                                        }
+                                        """)
+                )
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("INVALID_CURRENT_PASSWORD"));
+
+        assertThat(userRepository.findByEmail(USER_A_EMAIL)).isPresent();
+        assertThat(userRepository.findByEmail("updated@example.com")).isEmpty();
     }
 
     @Test
@@ -552,6 +599,12 @@ class UserProfileIntegrationTest {
         mockMvc.perform(
                         delete("/api/v1/users/me")
                                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                        {
+                                          "currentPassword": "SenhaSegura123!"
+                                        }
+                                        """)
                 )
                 .andExpect(status().isNoContent());
 
@@ -579,6 +632,46 @@ class UserProfileIntegrationTest {
                                         """)
                 )
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void shouldRejectAccountDeletionWithoutCurrentPassword() throws Exception {
+        registerUser("Saul Goodman", USER_A_EMAIL, PASSWORD);
+        String token = login(USER_A_EMAIL, PASSWORD);
+
+        mockMvc.perform(
+                        delete("/api/v1/users/me")
+                                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{}")
+                )
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
+
+        assertThat(userRepository.findByEmail(USER_A_EMAIL).orElseThrow().getStatus())
+                .isEqualTo(UserStatus.ACTIVE);
+    }
+
+    @Test
+    void shouldRejectAccountDeletionWithIncorrectCurrentPassword() throws Exception {
+        registerUser("Saul Goodman", USER_A_EMAIL, PASSWORD);
+        String token = login(USER_A_EMAIL, PASSWORD);
+
+        mockMvc.perform(
+                        delete("/api/v1/users/me")
+                                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                        {
+                                          "currentPassword": "SenhaIncorreta123!"
+                                        }
+                                        """)
+                )
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("INVALID_CURRENT_PASSWORD"));
+
+        assertThat(userRepository.findByEmail(USER_A_EMAIL).orElseThrow().getStatus())
+                .isEqualTo(UserStatus.ACTIVE);
     }
 
     private void registerUser(

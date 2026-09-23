@@ -2,8 +2,10 @@ package com.amorim.finance_manager.user.service;
 
 import com.amorim.finance_manager.shared.exception.DuplicateEmailException;
 import com.amorim.finance_manager.shared.exception.InvalidPasswordChangeException;
+import com.amorim.finance_manager.shared.exception.InvalidCurrentPasswordException;
 import com.amorim.finance_manager.shared.exception.InvalidProfileUpdateException;
 import com.amorim.finance_manager.user.dto.ChangePasswordRequest;
+import com.amorim.finance_manager.user.dto.ConfirmCurrentPasswordRequest;
 import com.amorim.finance_manager.user.dto.UpdateProfileRequest;
 import com.amorim.finance_manager.user.dto.UserResponse;
 import com.amorim.finance_manager.user.entity.User;
@@ -38,8 +40,13 @@ public class UserProfileService {
 
         User user = currentUserService.getCurrentUser();
 
-        if (request.email() != null
-                && !request.email().equals(user.getEmail())
+        boolean isEmailChange = request.email() != null && !request.email().equals(user.getEmail());
+
+        if (isEmailChange) {
+            requireCurrentPassword(user, request.currentPassword());
+        }
+
+        if (isEmailChange
                 && userRepository.existsByEmailAndIdNot(request.email(), user.getId())) {
             throw new DuplicateEmailException();
         }
@@ -72,8 +79,10 @@ public class UserProfileService {
     }
 
     @Transactional
-    public void deleteCurrentUser() {
+    public void deleteCurrentUser(ConfirmCurrentPasswordRequest request) {
         User user = currentUserService.getCurrentUser();
+
+        requireCurrentPassword(user, request.currentPassword());
 
         user.setStatus(UserStatus.DELETED);
         user.setAuthenticationVersion(user.getAuthenticationVersion() + 1);
@@ -91,6 +100,12 @@ public class UserProfileService {
 
         if (request.email() != null && request.email().isBlank()) {
             throw new InvalidProfileUpdateException("E-mail não pode ser vazio");
+        }
+    }
+
+    private void requireCurrentPassword(User user, String currentPassword) {
+        if (currentPassword == null || !passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
+            throw new InvalidCurrentPasswordException();
         }
     }
 }

@@ -55,10 +55,12 @@ describe('ProfileApiService', () => {
     const payload: UpdateProfileRequest = {
       name: 'Skyler White',
       email: 'skyler.white@example.com',
+      currentPassword: 'SenhaSegura123!',
     };
     const response: User = {
       ...user,
-      ...payload,
+      name: payload.name!,
+      email: payload.email!,
     };
 
     service.updateCurrentUser(payload).subscribe((result) => {
@@ -111,12 +113,12 @@ describe('ProfileApiService', () => {
   });
 
   it('deve solicitar a exclusão lógica da conta autenticada', () => {
-    service.deleteCurrentUser().subscribe();
+    service.deleteCurrentUser({ currentPassword: 'SenhaSegura123!' }).subscribe();
 
     const request = httpMock.expectOne('/api/v1/users/me');
 
     expect(request.request.method).toBe('DELETE');
-    expect(request.request.body).toBeNull();
+    expect(request.request.body).toEqual({ currentPassword: 'SenhaSegura123!' });
 
     request.flush(null, { status: 204, statusText: 'No Content' });
   });

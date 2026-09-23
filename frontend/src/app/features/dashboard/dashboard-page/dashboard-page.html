@@ -3,7 +3,9 @@
     <div>
       <h1 id="dashboard-title">Dashboard financeiro</h1>
       @if (dashboard(); as data) {
-        <p>Visão consolidada de {{ periodLabel() }}. Referência: {{ data.referenceDate }}.</p>
+        <p>
+          Visão consolidada de {{ periodLabel() }}. Referência: {{ data.referenceDate | isoDate }}.
+        </p>
       } @else {
         <p>Acompanhe os principais indicadores financeiros em um só lugar.</p>
       }

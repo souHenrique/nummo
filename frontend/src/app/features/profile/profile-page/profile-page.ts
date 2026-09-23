@@ -28,7 +28,11 @@ import { FormField } from '../../../shared/ui/form-field/form-field';
 import { Skeleton } from '../../../shared/ui/skeleton/skeleton';
 import { AuthService } from '../../auth/services/auth.service';
 import { ProfileApiService } from '../data-access/profile-api.service';
-import { ChangePasswordRequest, UpdateProfileRequest } from '../models/profile.models';
+import {
+  ChangePasswordRequest,
+  ConfirmCurrentPasswordRequest,
+  UpdateProfileRequest,
+} from '../models/profile.models';
 
 const nonBlankValidator: ValidatorFn = (control: AbstractControl): ValidationErrors | null => {
   const value = control.value;
@@ -45,7 +49,7 @@ const passwordsMatchValidator: ValidatorFn = (
   return newPassword === confirmation ? null : { passwordMismatch: true };
 };
 
-type ProfileField = 'name' | 'email';
+type ProfileField = 'name' | 'email' | 'currentPassword';
 type PasswordField = 'currentPassword' | 'newPassword' | 'confirmation';
 
 @Component({
@@ -90,6 +94,14 @@ export class ProfilePage implements OnInit {
     email: new FormControl('', {
       nonNullable: true,
       validators: [nonBlankValidator, Validators.email, Validators.maxLength(320)],
+    }),
+    currentPassword: new FormControl('', { nonNullable: true }),
+  });
+
+  protected readonly deletionForm = new FormGroup({
+    currentPassword: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.required],
     }),
   });
 
@@ -150,6 +162,12 @@ export class ProfilePage implements OnInit {
       return;
     }
 
+    if (this.emailWillChange() && !this.form.controls.currentPassword.value.trim()) {
+      this.form.controls.currentPassword.setErrors({ required: true });
+      this.form.controls.currentPassword.markAsTouched();
+      return;
+    }
+
     const request = this.buildUpdateRequest();
 
     if (!request) {
@@ -192,6 +210,10 @@ export class ProfilePage implements OnInit {
 
     if (!this.submitted() && !control.touched) {
       return undefined;
+    }
+
+    if (fieldName === 'currentPassword' && this.emailWillChange() && control.hasError('required')) {
+      return 'Informe sua senha atual para alterar o e-mail.';
     }
 
     if (control.hasError('required')) {
@@ -260,7 +282,14 @@ export class ProfilePage implements OnInit {
     }
 
     this.deletionError.set(undefined);
+
+    if (this.deletionForm.invalid) {
+      this.deletionForm.markAllAsTouched();
+      return;
+    }
+
     this.deletingAccount.set(true);
+    const request: ConfirmCurrentPasswordRequest = this.deletionForm.getRawValue();
 
     this.dialog
       .confirm({
@@ -272,7 +301,7 @@ export class ProfilePage implements OnInit {
       })
       .pipe(
         take(1),
-        switchMap((confirmed) => (confirmed ? this.profileApi.deleteCurrentUser() : EMPTY)),
+        switchMap((confirmed) => (confirmed ? this.profileApi.deleteCurrentUser(request) : EMPTY)),
         finalize(() => this.deletingAccount.set(false)),
       )
       .subscribe({
@@ -285,6 +314,7 @@ export class ProfilePage implements OnInit {
           this.auth.logout();
         },
         error: (error: unknown) => {
+          this.deletionForm.reset();
           this.deletionError.set(
             error instanceof ApiRequestError
               ? error.message
@@ -332,6 +362,7 @@ export class ProfilePage implements OnInit {
     this.form.reset({
       name: profile.name,
       email: profile.email,
+      currentPassword: '',
     });
 
     this.form.markAsPristine();
@@ -357,12 +388,17 @@ export class ProfilePage implements OnInit {
 
     if (email !== currentProfile.email.toLowerCase()) {
       request.email = email;
+      request.currentPassword = values.currentPassword;
     }
 
     return Object.keys(request).length > 0 ? request : null;
   }
 
   private handleUpdateError(error: unknown): void {
+    if (error instanceof ApiRequestError && error.code === 'INVALID_CURRENT_PASSWORD') {
+      this.form.controls.currentPassword.reset();
+    }
+
     this.submissionError.set(this.errorMessage(error));
 
     if (!(error instanceof ApiRequestError)) {
@@ -398,5 +434,24 @@ export class ProfilePage implements OnInit {
     }
 
     return 'Não foi possível carregar ou atualizar o perfil.';
+  }
+
+  protected emailWillChange(): boolean {
+    const currentProfile = this.profile();
+
+    return (
+      currentProfile !== null &&
+      this.form.controls.email.value.trim().toLowerCase() !== currentProfile.email.toLowerCase()
+    );
+  }
+
+  protected deletionPasswordError(): string | undefined {
+    const control = this.deletionForm.controls.currentPassword;
+
+    if (!control.touched || !control.hasError('required')) {
+      return undefined;
+    }
+
+    return 'Informe sua senha atual para excluir a conta.';
   }
 }

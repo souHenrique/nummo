@@ -2,6 +2,7 @@ package com.amorim.finance_manager.user.api;
 
 import com.amorim.finance_manager.shared.exception.ApiError;
 import com.amorim.finance_manager.user.dto.ChangePasswordRequest;
+import com.amorim.finance_manager.user.dto.ConfirmCurrentPasswordRequest;
 import com.amorim.finance_manager.user.dto.UpdateProfileRequest;
 import com.amorim.finance_manager.user.dto.UserResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -57,7 +58,7 @@ public interface UserApiDocs {
 
     @Operation(
             summary = "Atualizar perfil",
-            description = "Atualiza parcialmente o nome ou e-mail do usuário",
+            description = "Atualiza parcialmente o nome ou e-mail do usuário. Alterar o e-mail exige a senha atual.",
             requestBody =
             @RequestBody(
                     required = true,
@@ -87,7 +88,7 @@ public interface UserApiDocs {
             ),
             @ApiResponse(
                     responseCode = "400",
-                    description = "Atualização inválida",
+                    description = "Atualização inválida ou senha atual incorreta",
                     content = @Content(
                             schema = @Schema(implementation = ApiError.class),
                             examples = @ExampleObject(
@@ -158,15 +159,30 @@ public interface UserApiDocs {
 
     @Operation(
             summary = "Excluir conta",
-            description = "Realiza a exclusão lógica da conta, preserva os dados financeiros e invalida as sessões ativas."
+            description = "Exige a senha atual e realiza a exclusão lógica da conta, preservando os dados financeiros e invalidando as sessões ativas."
     )
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Conta excluída logicamente"),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Senha atual incorreta",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
+            ),
             @ApiResponse(
                     responseCode = "401",
                     description = "Usuário não autenticado",
                     content = @Content(schema = @Schema(implementation = ApiError.class))
             )
     })
-    ResponseEntity<Void> deleteCurrentUser();
+    ResponseEntity<Void> deleteCurrentUser(
+            @RequestBody(
+                    required = true,
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ConfirmCurrentPasswordRequest.class),
+                            examples = @ExampleObject(value = CONFIRM_CURRENT_PASSWORD_REQUEST)
+                    )
+            )
+            ConfirmCurrentPasswordRequest request
+    );
 }

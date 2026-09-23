@@ -186,11 +186,18 @@ public final class OpenApiExamples {
             """;
 
     public static final String UPDATE_PROFILE_REQUEST = """
-        {
-          "name": "Henrique Amorim Silva",
-          "email": "henrique.silva@example.com"
-        }
-        """;
+            {
+              "name": "Henrique Amorim Silva",
+              "email": "henrique.silva@example.com",
+              "currentPassword": "SenhaSegura123!"
+            }
+            """;
+
+    public static final String CONFIRM_CURRENT_PASSWORD_REQUEST = """
+            {
+              "currentPassword": "SenhaSegura123!"
+            }
+            """;
 
     public static final String CHANGE_PASSWORD_REQUEST = """
         {

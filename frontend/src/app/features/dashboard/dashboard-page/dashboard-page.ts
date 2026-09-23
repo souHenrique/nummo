@@ -10,6 +10,7 @@ import { Card } from '../../../shared/ui/card/card';
 import { ErrorState } from '../../../shared/ui/error-state/error-state';
 import { Skeleton } from '../../../shared/ui/skeleton/skeleton';
 import type { FeedbackTone } from '../../../shared/ui/types/feedback-tone';
+import { IsoDatePipe } from '../../../shared/pipes/iso-date.pipe';
 import { BudgetAlertStatus } from '../../budgets/models/budget.models';
 import { CategoryApiService } from '../../categories/data-access/category-api.service';
 import { Category } from '../../categories/models/category.models';
@@ -60,7 +61,7 @@ const MONTHS = [
 
 @Component({
   selector: 'app-dashboard-page',
-  imports: [Badge, Button, Card, CurrencyPipe, DecimalPipe, ErrorState, Skeleton],
+  imports: [Badge, Button, Card, CurrencyPipe, DecimalPipe, ErrorState, IsoDatePipe, Skeleton],
   styleUrl: './dashboard-page.scss',
   templateUrl: './dashboard-page.html',
 })

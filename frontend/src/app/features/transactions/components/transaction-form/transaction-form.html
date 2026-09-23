@@ -32,14 +32,7 @@
     </app-form-field>
 
     <app-form-field label="Valor" controlId="transaction-amount">
-      <input
-        appInput
-        id="transaction-amount"
-        type="number"
-        min="0.01"
-        step="0.01"
-        formControlName="amount"
-      />
+      <input appInput appCurrencyInput id="transaction-amount" formControlName="amount" />
     </app-form-field>
 
     <app-form-field label="Data" controlId="competence-date">

@@ -16,6 +16,7 @@ import { Button } from '../../../../shared/ui/button/button';
 import { ErrorState } from '../../../../shared/ui/error-state/error-state';
 import { FormField } from '../../../../shared/ui/form-field/form-field';
 import { InputDirective } from '../../../../shared/ui/form-control/input';
+import { CurrencyInputDirective } from '../../../../shared/ui/form-control/currency-input';
 import { SelectDirective } from '../../../../shared/ui/form-control/select';
 import { Skeleton } from '../../../../shared/ui/skeleton/skeleton';
 import { AccountApiService } from '../../../accounts/data-access/account-api.service';
@@ -42,6 +43,7 @@ function differentAccountsValidator(control: AbstractControl): ValidationErrors 
     Button,
     ErrorState,
     FormField,
+    CurrencyInputDirective,
     InputDirective,
     SelectDirective,
     Skeleton,

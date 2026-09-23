@@ -10,6 +10,7 @@ import {
 import { Alert } from '../../../../shared/ui/alert/alert';
 import { Button } from '../../../../shared/ui/button/button';
 import { InputDirective } from '../../../../shared/ui/form-control/input';
+import { CurrencyInputDirective } from '../../../../shared/ui/form-control/currency-input';
 import { SelectDirective } from '../../../../shared/ui/form-control/select';
 import { FormField } from '../../../../shared/ui/form-field/form-field';
 import { Category } from '../../../categories/models/category.models';
@@ -27,7 +28,15 @@ function integerValidator(control: AbstractControl): ValidationErrors | null {
 
 @Component({
   selector: 'app-credit-card-purchase-form',
-  imports: [ReactiveFormsModule, Alert, Button, FormField, InputDirective, SelectDirective],
+  imports: [
+    ReactiveFormsModule,
+    Alert,
+    Button,
+    CurrencyInputDirective,
+    FormField,
+    InputDirective,
+    SelectDirective,
+  ],
   templateUrl: './credit-card-purchase-form.html',
   styleUrl: './credit-card-purchase-form.scss',
 })

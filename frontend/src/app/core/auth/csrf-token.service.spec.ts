@@ -25,7 +25,7 @@ describe('CsrfTokenService', () => {
 
   afterEach(() => httpMock.verify());
 
-  it('loads the token once and reuses it only in memory', () => {
+  it('shares one token request while it is in progress', () => {
     const received: string[] = [];
 
     service.getToken().subscribe((token) => received.push(token));
@@ -34,13 +34,26 @@ describe('CsrfTokenService', () => {
     const request = httpMock.expectOne('/api/v1/auth/csrf');
     request.flush({ token: 'csrf-token', headerName: 'X-XSRF-TOKEN' });
 
-    service.getToken().subscribe((token) => received.push(token));
-
-    expect(received).toEqual(['csrf-token', 'csrf-token', 'csrf-token']);
-    httpMock.expectNone('/api/v1/auth/csrf');
+    expect(received).toEqual(['csrf-token', 'csrf-token']);
   });
 
-  it('loads a new token after the in-memory value is cleared', () => {
+  it('loads a fresh token for a later mutation', () => {
+    const received: string[] = [];
+
+    service.getToken().subscribe((token) => received.push(token));
+    httpMock
+      .expectOne('/api/v1/auth/csrf')
+      .flush({ token: 'first-token', headerName: 'X-XSRF-TOKEN' });
+
+    service.getToken().subscribe((token) => received.push(token));
+    httpMock
+      .expectOne('/api/v1/auth/csrf')
+      .flush({ token: 'second-token', headerName: 'X-XSRF-TOKEN' });
+
+    expect(received).toEqual(['first-token', 'second-token']);
+  });
+
+  it('allows a new token request after clearing a pending request', () => {
     service.getToken().subscribe();
     httpMock
       .expectOne('/api/v1/auth/csrf')

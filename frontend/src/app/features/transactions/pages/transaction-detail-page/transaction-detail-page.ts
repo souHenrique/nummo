@@ -1,4 +1,4 @@
-import { CurrencyPipe, DatePipe } from '@angular/common';
+import { CurrencyPipe } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { EMPTY, catchError, finalize, forkJoin, map, of, switchMap, take } from 'rxjs';
@@ -11,6 +11,7 @@ import { Button } from '../../../../shared/ui/button/button';
 import { Card } from '../../../../shared/ui/card/card';
 import { ErrorState } from '../../../../shared/ui/error-state/error-state';
 import { Skeleton } from '../../../../shared/ui/skeleton/skeleton';
+import { IsoDatePipe } from '../../../../shared/pipes/iso-date.pipe';
 import { AccountApiService } from '../../../accounts/data-access/account-api.service';
 import { Account } from '../../../accounts/models/account.models';
 import { CategoryApiService } from '../../../categories/data-access/category-api.service';
@@ -28,7 +29,7 @@ import {
 
 @Component({
   selector: 'app-transaction-detail-page',
-  imports: [Alert, Badge, Button, Card, CurrencyPipe, DatePipe, ErrorState, Skeleton],
+  imports: [Alert, Badge, Button, Card, CurrencyPipe, ErrorState, IsoDatePipe, Skeleton],
   templateUrl: './transaction-detail-page.html',
   styleUrl: './transaction-detail-page.scss',
 })

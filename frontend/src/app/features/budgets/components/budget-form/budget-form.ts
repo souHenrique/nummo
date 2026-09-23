@@ -10,6 +10,7 @@ import {
 
 import { Button } from '../../../../shared/ui/button/button';
 import { InputDirective } from '../../../../shared/ui/form-control/input';
+import { CurrencyInputDirective } from '../../../../shared/ui/form-control/currency-input';
 import { SelectDirective } from '../../../../shared/ui/form-control/select';
 import { FormField } from '../../../../shared/ui/form-field/form-field';
 import { Category } from '../../../categories/models/category.models';
@@ -48,7 +49,14 @@ const maxTwoDecimalPlaces: ValidatorFn = (
 
 @Component({
   selector: 'app-budget-form',
-  imports: [ReactiveFormsModule, Button, FormField, InputDirective, SelectDirective],
+  imports: [
+    ReactiveFormsModule,
+    Button,
+    CurrencyInputDirective,
+    FormField,
+    InputDirective,
+    SelectDirective,
+  ],
   templateUrl: './budget-form.html',
   styleUrl: './budget-form.scss',
 })

@@ -60,6 +60,25 @@
           />
         </app-form-field>
 
+        @if (emailWillChange()) {
+          <app-form-field
+            label="Confirme sua senha atual"
+            controlId="profile-email-current-password"
+            hint="A confirmação protege a alteração do seu e-mail."
+            [error]="fieldError('currentPassword')"
+            [required]="true"
+          >
+            <input
+              appInput
+              id="profile-email-current-password"
+              type="password"
+              formControlName="currentPassword"
+              autocomplete="current-password"
+              [attr.aria-invalid]="fieldError('currentPassword') ? 'true' : null"
+            />
+          </app-form-field>
+        }
+
         <div class="profile-form__actions">
           <app-button type="submit" [loading]="saving()" [disabled]="saving()">
             Salvar alterações
@@ -168,16 +187,40 @@
         Esta ação encerra sua sessão e impede novos acessos.
       </p>
 
-      <div class="profile-page__danger-actions">
-        <app-button
-          variant="danger"
-          [loading]="deletingAccount()"
-          [disabled]="deletingAccount()"
-          (pressed)="confirmAccountDeletion()"
+      <form
+        class="profile-page__deletion-form"
+        [formGroup]="deletionForm"
+        (ngSubmit)="confirmAccountDeletion()"
+        novalidate
+      >
+        <app-form-field
+          label="Confirme sua senha atual"
+          controlId="profile-delete-current-password"
+          hint="Essa confirmação protege sua conta contra exclusões indevidas."
+          [error]="deletionPasswordError()"
+          [required]="true"
         >
-          Excluir minha conta
-        </app-button>
-      </div>
+          <input
+            appInput
+            id="profile-delete-current-password"
+            type="password"
+            formControlName="currentPassword"
+            autocomplete="current-password"
+            [attr.aria-invalid]="deletionPasswordError() ? 'true' : null"
+          />
+        </app-form-field>
+
+        <div class="profile-page__danger-actions">
+          <app-button
+            type="submit"
+            variant="danger"
+            [loading]="deletingAccount()"
+            [disabled]="deletingAccount()"
+          >
+            Excluir minha conta
+          </app-button>
+        </div>
+      </form>
     </app-card>
   }
 </section>

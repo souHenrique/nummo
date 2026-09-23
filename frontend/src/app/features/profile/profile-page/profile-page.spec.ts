@@ -234,11 +234,25 @@ describe('ProfilePage', () => {
     createPage();
 
     fillInput('profile-email', 'skyler.white@example.com');
+    fillInput('profile-email-current-password', 'SenhaSegura123!');
     submitForm();
 
     expect(profileApi.updateCurrentUser).toHaveBeenCalledWith({
       email: 'skyler.white@example.com',
+      currentPassword: 'SenhaSegura123!',
     });
+  });
+
+  it('should require the current password before changing the email', () => {
+    createPage();
+
+    fillInput('profile-email', 'skyler.white@example.com');
+    submitForm();
+
+    expect(profileApi.updateCurrentUser).not.toHaveBeenCalled();
+    expect(fixture.nativeElement.textContent).toContain(
+      'Informe sua senha atual para alterar o e-mail.',
+    );
   });
 
   it('should show field errors returned by the API', () => {
@@ -261,6 +275,7 @@ describe('ProfilePage', () => {
     createPage();
 
     fillInput('profile-email', 'outro.usuario@example.com');
+    fillInput('profile-email-current-password', 'SenhaSegura123!');
     submitForm();
 
     expect(fixture.nativeElement.textContent).toContain('E-mail já está em uso.');
@@ -270,7 +285,7 @@ describe('ProfilePage', () => {
   it('should render a separate password form', () => {
     createPage();
 
-    expect(fixture.nativeElement.querySelectorAll('input[type="password"]')).toHaveLength(3);
+    expect(fixture.nativeElement.querySelectorAll('input[type="password"]')).toHaveLength(4);
     expect(fixture.nativeElement.textContent).toContain('Senha atual');
     expect(fixture.nativeElement.textContent).toContain('Confirmar nova senha');
   });
@@ -367,6 +382,7 @@ describe('ProfilePage', () => {
     const deleteButton = fixture.nativeElement.querySelector(
       '.profile-page__danger-actions .button',
     ) as HTMLButtonElement;
+    fillInput('profile-delete-current-password', 'SenhaSegura123!');
     deleteButton.click();
 
     expect(dialog.confirm).toHaveBeenCalledWith(
@@ -388,9 +404,12 @@ describe('ProfilePage', () => {
     const deleteButton = fixture.nativeElement.querySelector(
       '.profile-page__danger-actions .button',
     ) as HTMLButtonElement;
+    fillInput('profile-delete-current-password', 'SenhaSegura123!');
     deleteButton.click();
 
-    expect(profileApi.deleteCurrentUser).toHaveBeenCalledOnce();
+    expect(profileApi.deleteCurrentUser).toHaveBeenCalledWith({
+      currentPassword: 'SenhaSegura123!',
+    });
     expect(toast.show).toHaveBeenCalledWith({
       tone: 'success',
       title: 'Conta excluída',
@@ -407,6 +426,7 @@ describe('ProfilePage', () => {
     const deleteButton = fixture.nativeElement.querySelector(
       '.profile-page__danger-actions .button',
     ) as HTMLButtonElement;
+    fillInput('profile-delete-current-password', 'SenhaSegura123!');
     deleteButton.click();
     deleteButton.click();
 
@@ -433,10 +453,27 @@ describe('ProfilePage', () => {
     const deleteButton = fixture.nativeElement.querySelector(
       '.profile-page__danger-actions .button',
     ) as HTMLButtonElement;
+    fillInput('profile-delete-current-password', 'SenhaSegura123!');
     deleteButton.click();
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).toContain('Não foi possível excluir a conta.');
     expect(auth.logout).not.toHaveBeenCalled();
+  });
+
+  it('should require the current password before opening the account deletion confirmation', () => {
+    createPage();
+
+    const deleteButton = fixture.nativeElement.querySelector(
+      '.profile-page__danger-actions .button',
+    ) as HTMLButtonElement;
+    deleteButton.click();
+    fixture.detectChanges();
+
+    expect(dialog.confirm).not.toHaveBeenCalled();
+    expect(profileApi.deleteCurrentUser).not.toHaveBeenCalled();
+    expect(fixture.nativeElement.textContent).toContain(
+      'Informe sua senha atual para excluir a conta.',
+    );
   });
 });

@@ -34,7 +34,7 @@
 
     <app-card
       [title]="currentTransaction.description"
-      [subtitle]="'Criada em ' + currentTransaction.createdAt"
+      [subtitle]="'Criada em ' + (currentTransaction.createdAt | isoDate)"
     >
       <div card-actions class="transaction-detail-page__card-actions">
         <app-badge
@@ -80,17 +80,17 @@
 
         <div>
           <dt>Data</dt>
-          <dd>{{ currentTransaction.competenceDate }}</dd>
+          <dd>{{ currentTransaction.competenceDate | isoDate }}</dd>
         </div>
 
         <div>
           <dt>Data efetiva</dt>
-          <dd>{{ currentTransaction.effectiveDate ?? '—' }}</dd>
+          <dd>{{ currentTransaction.effectiveDate | isoDate }}</dd>
         </div>
 
         <div>
           <dt>Vencimento</dt>
-          <dd>{{ currentTransaction.dueDate ?? '—' }}</dd>
+          <dd>{{ currentTransaction.dueDate | isoDate }}</dd>
         </div>
 
         <div>
@@ -138,10 +138,8 @@
               @for (installment of details.installments; track installment.id) {
                 <tr>
                   <td>{{ installment.installmentNumber }}/{{ installment.installmentCount }}</td>
-                  <td>{{ installment.competenceDate | date: 'dd/MM/yyyy' }}</td>
-                  <td>
-                    {{ installment.dueDate ? (installment.dueDate | date: 'dd/MM/yyyy') : '—' }}
-                  </td>
+                  <td>{{ installment.competenceDate | isoDate }}</td>
+                  <td>{{ installment.dueDate | isoDate }}</td>
                   <td>
                     <app-badge
                       [label]="statusLabel(installment.status)"

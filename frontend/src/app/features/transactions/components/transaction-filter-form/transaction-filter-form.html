@@ -76,14 +76,7 @@
           : undefined
       "
     >
-      <input
-        appInput
-        id="min-amount"
-        type="number"
-        min="0"
-        step="0.01"
-        formControlName="minAmount"
-      />
+      <input appInput appCurrencyInput id="min-amount" formControlName="minAmount" />
     </app-form-field>
 
     <app-form-field
@@ -95,14 +88,7 @@
           : undefined
       "
     >
-      <input
-        appInput
-        id="max-amount"
-        type="number"
-        min="0"
-        step="0.01"
-        formControlName="maxAmount"
-      />
+      <input appInput appCurrencyInput id="max-amount" formControlName="maxAmount" />
     </app-form-field>
 
     <app-form-field

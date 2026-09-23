@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { finalize, map, Observable, of, shareReplay, tap } from 'rxjs';
+import { finalize, map, Observable, shareReplay } from 'rxjs';
 
 import { ApiUrlService } from '../http/api-url.service';
 
@@ -14,14 +14,9 @@ export class CsrfTokenService {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = inject(ApiUrlService);
 
-  private token: string | null = null;
   private pendingRequest: Observable<string> | null = null;
 
   getToken(): Observable<string> {
-    if (this.token) {
-      return of(this.token);
-    }
-
     if (this.pendingRequest) {
       return this.pendingRequest;
     }
@@ -36,9 +31,6 @@ export class CsrfTokenService {
 
         return token;
       }),
-      tap((token) => {
-        this.token = token;
-      }),
       finalize(() => {
         this.pendingRequest = null;
       }),
@@ -49,7 +41,6 @@ export class CsrfTokenService {
   }
 
   clear(): void {
-    this.token = null;
     this.pendingRequest = null;
   }
 }

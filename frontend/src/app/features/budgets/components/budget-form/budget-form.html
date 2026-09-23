@@ -35,15 +35,7 @@
     [required]="true"
     [error]="fieldError('amountLimit')"
   >
-    <input
-      appInput
-      id="budget-amount-limit"
-      type="number"
-      min="0.01"
-      step="0.01"
-      inputmode="decimal"
-      formControlName="amountLimit"
-    />
+    <input appInput appCurrencyInput id="budget-amount-limit" formControlName="amountLimit" />
   </app-form-field>
 
   <div class="budget-form__actions">

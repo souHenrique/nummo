@@ -16,11 +16,20 @@ public record UpdateProfileRequest(
         @Schema(description = "Novo e-mail do usuário", example = "henrique.silva@example.com", format = "email")
         @Email(message = "E-mail inválido")
         @Size(max = 320, message = "E-mail deve possuir no máximo 320 caracteres")
-        String email
+        String email,
+
+        @Schema(
+                description = "Senha atual obrigatória quando o e-mail for alterado",
+                example = "SenhaSegura123!",
+                format = "password",
+                writeOnly = true
+        )
+        String currentPassword
 ) {
     public UpdateProfileRequest {
         name = name == null ? null : name.trim();
 
         email = email == null ? null : email.trim().toLowerCase(Locale.ROOT);
+        currentPassword = currentPassword == null ? null : currentPassword.trim();
     }
 }

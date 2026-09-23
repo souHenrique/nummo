@@ -3,7 +3,11 @@ import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiUrlService } from '../../../core/http/api-url.service';
 import { User } from '../../../shared/models/user.models';
-import { ChangePasswordRequest, UpdateProfileRequest } from '../models/profile.models';
+import {
+  ChangePasswordRequest,
+  ConfirmCurrentPasswordRequest,
+  UpdateProfileRequest,
+} from '../models/profile.models';
 
 @Injectable({ providedIn: 'root' })
 export class ProfileApiService {
@@ -22,7 +26,7 @@ export class ProfileApiService {
     return this.http.patch<void>(this.apiUrl.build('users/me/password'), request);
   }
 
-  deleteCurrentUser(): Observable<void> {
-    return this.http.delete<void>(this.apiUrl.build('users/me'));
+  deleteCurrentUser(request: ConfirmCurrentPasswordRequest): Observable<void> {
+    return this.http.delete<void>(this.apiUrl.build('users/me'), { body: request });
   }
 }

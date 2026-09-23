@@ -180,6 +180,19 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(InvalidCurrentPasswordException.class)
+    public ResponseEntity<ApiError> handleInvalidCurrentPassword(
+            InvalidCurrentPasswordException exception,
+            HttpServletRequest request
+    ) {
+        return response(
+                HttpStatus.BAD_REQUEST,
+                ApiErrorCode.INVALID_CURRENT_PASSWORD,
+                exception.getMessage(),
+                request
+        );
+    }
+
     @ExceptionHandler(AccountNotFoundException.class)
     public ResponseEntity<ApiError> handleAccountNotFound(
             AccountNotFoundException exception,

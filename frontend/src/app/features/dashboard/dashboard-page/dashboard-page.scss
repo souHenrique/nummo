@@ -107,10 +107,10 @@
 .dashboard__flow-plot {
   position: relative;
   display: grid;
-  grid-template-columns: repeat(12, minmax(2.5rem, 1fr));
-  gap: var(--space-2);
-  min-width: 36rem;
-  height: 15rem;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: var(--space-1);
+  min-width: 0;
+  height: 13rem;
   padding: var(--space-3) 0 0;
   background: repeating-linear-gradient(
     to bottom,
@@ -147,7 +147,7 @@
 .dashboard__flow-bar {
   position: absolute;
   z-index: 1;
-  width: calc(50% - var(--space-1));
+  width: calc(50% - 1px);
   min-height: 0;
   padding: 0;
   border: 0;
@@ -175,7 +175,7 @@
 .dashboard__flow-label {
   overflow: hidden;
   color: var(--color-text-muted);
-  font-size: var(--font-size-xs);
+  font-size: 0.625rem;
   font-weight: var(--font-weight-semibold);
   text-align: center;
   text-overflow: ellipsis;
@@ -266,6 +266,7 @@
   color: var(--color-info-text);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
+  overflow-wrap: anywhere;
   background: var(--color-info-surface);
   border: 1px solid var(--color-info-border);
   border-radius: var(--radius-md);
@@ -365,6 +366,19 @@
 }
 
 @include mixins.up(sm) {
+  .dashboard__flow-plot {
+    gap: var(--space-2);
+    height: 15rem;
+  }
+
+  .dashboard__flow-bar {
+    width: calc(50% - var(--space-1));
+  }
+
+  .dashboard__flow-label {
+    font-size: var(--font-size-xs);
+  }
+
   .dashboard__budget-summary {
     grid-template-columns: repeat(3, 1fr);
   }

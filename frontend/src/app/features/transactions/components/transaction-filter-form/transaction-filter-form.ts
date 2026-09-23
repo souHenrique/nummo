@@ -19,6 +19,7 @@ import {
 import { Button } from '../../../../shared/ui/button/button';
 import { FormField } from '../../../../shared/ui/form-field/form-field';
 import { InputDirective } from '../../../../shared/ui/form-control/input';
+import { CurrencyInputDirective } from '../../../../shared/ui/form-control/currency-input';
 import { SelectDirective } from '../../../../shared/ui/form-control/select';
 
 function dateRangeValidator(control: AbstractControl): ValidationErrors | null {
@@ -49,7 +50,14 @@ function amountRangeValidator(control: AbstractControl): ValidationErrors | null
 
 @Component({
   selector: 'app-transaction-filter-form',
-  imports: [ReactiveFormsModule, Button, FormField, InputDirective, SelectDirective],
+  imports: [
+    ReactiveFormsModule,
+    Button,
+    CurrencyInputDirective,
+    FormField,
+    InputDirective,
+    SelectDirective,
+  ],
   templateUrl: './transaction-filter-form.html',
   styleUrl: './transaction-filter-form.scss',
 })

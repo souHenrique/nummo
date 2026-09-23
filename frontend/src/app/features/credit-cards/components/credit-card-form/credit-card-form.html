@@ -26,15 +26,7 @@
     [hint]="creditLimitHint()"
     [error]="creditLimitError()"
   >
-    <input
-      appInput
-      id="credit-limit"
-      type="number"
-      formControlName="creditLimit"
-      min="0.01"
-      step="0.01"
-      inputmode="decimal"
-    />
+    <input appInput appCurrencyInput id="credit-limit" formControlName="creditLimit" />
   </app-form-field>
 
   <div class="credit-card-form__days">
