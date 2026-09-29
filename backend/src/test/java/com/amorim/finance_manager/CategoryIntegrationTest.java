@@ -123,14 +123,14 @@ class CategoryIntegrationTest {
                                 .content("""
                                         {
                                           "name": "Alimentação",
-                                          "icon": "FOOD",
+                                          "icon": "TECHNOLOGY",
                                           "type": "EXPENSE",
                                           "parentCategoryId": null
                                         }
                                         """)
                 )
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.icon").value("FOOD"))
+                .andExpect(jsonPath("$.icon").value("TECHNOLOGY"))
                 .andReturn();
 
         UUID categoryId = UUID.fromString(
@@ -141,13 +141,13 @@ class CategoryIntegrationTest {
                         patch("/api/v1/categories/{id}", categoryId)
                                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .content("{\"icon\":\"SHOPPING\"}")
+                                .content("{\"icon\":\"COMPUTER\"}")
                 )
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.icon").value("SHOPPING"));
+                .andExpect(jsonPath("$.icon").value("COMPUTER"));
 
         assertThat(categoryRepository.findById(categoryId).orElseThrow().getIcon())
-                .isEqualTo(CategoryIcon.SHOPPING);
+                .isEqualTo(CategoryIcon.COMPUTER);
     }
 
     @Test
