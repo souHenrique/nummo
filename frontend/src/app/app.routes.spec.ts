@@ -82,7 +82,7 @@ describe('Application routes', () => {
                   inflows: 0,
                   outflows: 0,
                   net: 0,
-                  invoicePayments: 0,
+                  invoiceOutflows: 0,
                   incomeCategories: [],
                   expenseCategories: [],
                 },

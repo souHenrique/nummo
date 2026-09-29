@@ -8,7 +8,7 @@ export interface CashFlowSummary {
   inflows: number;
   outflows: number;
   net: number;
-  invoicePayments: number;
+  invoiceOutflows: number;
   incomeCategories: CategoryCashFlow[];
   expenseCategories: CategoryCashFlow[];
 }

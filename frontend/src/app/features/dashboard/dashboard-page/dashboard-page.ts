@@ -14,7 +14,6 @@ import { IsoDatePipe } from '../../../shared/pipes/iso-date.pipe';
 import { BudgetAlertStatus } from '../../budgets/models/budget.models';
 import { CategoryApiService } from '../../categories/data-access/category-api.service';
 import { Category } from '../../categories/models/category.models';
-import { ReportApiService } from '../../reports/data-access/report-api.service';
 import {
   AnnualCashFlow,
   AnnualCashFlowMonth,
@@ -62,7 +61,6 @@ const MONTHS = [
 export class DashboardPage implements OnInit {
   private readonly dashboardApi = inject(DashboardApiService);
   private readonly categoryApi = inject(CategoryApiService);
-  private readonly reportApi = inject(ReportApiService);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -115,11 +113,11 @@ export class DashboardPage implements OnInit {
           forkJoin({
             dashboard: of(dashboard),
             categories: this.categoryApi.findAll().pipe(catchError(() => of([]))),
-            annualCashFlow: this.reportApi
-              .getCompetenceAnnual(dashboard.year)
+            annualCashFlow: this.dashboardApi
+              .getAnnualChart(dashboard.year)
               .pipe(catchError(() => of(null))),
-            monthlyCompetenceReport: this.reportApi
-              .getCompetence(dashboard.periodStart, dashboard.periodEnd)
+            monthlyCompetenceReport: this.dashboardApi
+              .getMonthlyChart(dashboard.year, dashboard.month)
               .pipe(catchError(() => of(null))),
           }),
         ),

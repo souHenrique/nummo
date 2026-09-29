@@ -1,6 +1,10 @@
 package com.amorim.finance_manager.dashboard.api;
 
 import com.amorim.finance_manager.dashboard.dto.DashboardResponse;
+import com.amorim.finance_manager.report.dto.AnnualCashFlowReportRequest;
+import com.amorim.finance_manager.report.dto.AnnualCompetenceReportResponse;
+import com.amorim.finance_manager.report.dto.CompetenceReportResponse;
+import com.amorim.finance_manager.report.dto.MonthlyCashFlowReportRequest;
 import com.amorim.finance_manager.shared.exception.ApiError;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -10,6 +14,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springdoc.core.annotations.ParameterObject;
 
 import static com.amorim.finance_manager.config.openapi.OpenApiExamples.*;
 
@@ -99,4 +104,28 @@ public interface DashboardApiDocs {
             )
     })
     ResponseEntity<DashboardResponse> get();
+
+    @Operation(
+            summary = "Consultar gastos do gráfico mensal do dashboard",
+            description = """
+                    Retorna entradas e saídas para o mês informado. Lançamentos
+                    diretos usam a data efetiva; compras no cartão usam a data
+                    de vencimento da fatura. Pagamentos de fatura não entram
+                    novamente, evitando duplicidade.
+                    """
+    )
+    ResponseEntity<CompetenceReportResponse> monthlyChart(
+            @ParameterObject MonthlyCashFlowReportRequest request
+    );
+
+    @Operation(
+            summary = "Consultar evolução anual do gráfico do dashboard",
+            description = """
+                    Retorna os doze meses do ano. Compras no cartão são exibidas
+                    no mês de vencimento de cada fatura, e não no mês da compra.
+                    """
+    )
+    ResponseEntity<AnnualCompetenceReportResponse> annualChart(
+            @ParameterObject AnnualCashFlowReportRequest request
+    );
 }

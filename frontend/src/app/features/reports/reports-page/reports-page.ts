@@ -322,7 +322,7 @@ export class ReportsPage implements OnInit {
         inflows: data.totalIncome,
         outflows: data.totalExpenses,
         net: data.result,
-        invoicePayments: 0,
+        invoiceOutflows: 0,
         incomeCategories: data.incomeCategories,
         expenseCategories: data.expenseCategories,
       },

@@ -20,9 +20,17 @@ public class CashFlowCalculator {
             List<CashFlowAggregate> rows,
             Map<UUID, String> categoryNames
     ) {
+        return summarize(rows, categoryNames, ZERO);
+    }
+
+    public CashFlowSummaryResponse summarize(
+            List<CashFlowAggregate> rows,
+            Map<UUID, String> categoryNames,
+            BigDecimal invoiceOutflows
+    ) {
         BigDecimal inflows = ZERO;
         BigDecimal directExpenses = ZERO;
-        BigDecimal invoicePayments = ZERO;
+        BigDecimal totalInvoiceOutflows = invoiceOutflows;
 
         Map<UUID, BigDecimal> incomeCategories = new HashMap<>();
         Map<UUID, BigDecimal> expenseCategories = new HashMap<>();
@@ -47,7 +55,7 @@ public class CashFlowCalculator {
                     );
                 }
 
-                case CREDIT_CARD_PAYMENT -> invoicePayments = invoicePayments.add(row.amount());
+                case CREDIT_CARD_PAYMENT -> totalInvoiceOutflows = totalInvoiceOutflows.add(row.amount());
 
                 default -> throw new IllegalArgumentException(
                         "Tipo não elegível para o resumo de caixa: " + row.type()
@@ -55,13 +63,13 @@ public class CashFlowCalculator {
             }
         }
 
-        BigDecimal outflows = directExpenses.add(invoicePayments);
+        BigDecimal outflows = directExpenses.add(totalInvoiceOutflows);
 
         return new CashFlowSummaryResponse(
                 inflows,
                 outflows,
                 inflows.subtract(outflows),
-                invoicePayments,
+                totalInvoiceOutflows,
                 toCategories(incomeCategories, categoryNames),
                 toCategories(expenseCategories, categoryNames)
         );
@@ -107,7 +115,10 @@ public class CashFlowCalculator {
                 .toList();
     }
 
-    public CashFlowTotalsResponse summarizeTotals(List<AnnualCashFlowAggregate> rows) {
+    public CashFlowTotalsResponse summarizeTotals(
+            List<AnnualCashFlowAggregate> rows,
+            BigDecimal invoiceOutflows
+    ) {
         BigDecimal inflows = ZERO;
         BigDecimal outflows = ZERO;
 
@@ -122,10 +133,16 @@ public class CashFlowCalculator {
                 );
             }
         }
+        outflows = outflows.add(invoiceOutflows);
+
         return new CashFlowTotalsResponse(
                 inflows,
                 outflows,
                 inflows.subtract(outflows)
         );
+    }
+
+    public CashFlowTotalsResponse summarizeTotals(List<AnnualCashFlowAggregate> rows) {
+        return summarizeTotals(rows, ZERO);
     }
 }

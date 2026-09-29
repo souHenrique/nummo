@@ -2,6 +2,7 @@ package com.amorim.finance_manager.report.service;
 
 import com.amorim.finance_manager.category.entity.Category;
 import com.amorim.finance_manager.category.repository.CategoryRepository;
+import com.amorim.finance_manager.invoice.repository.InvoiceRepository;
 import com.amorim.finance_manager.report.projection.AnnualCashFlowAggregate;
 import com.amorim.finance_manager.report.projection.CashFlowAggregate;
 import com.amorim.finance_manager.report.repository.CashFlowReportRepository;
@@ -46,6 +47,8 @@ class MonthlyAnnualCashFlowReportServiceTest {
     @Mock
     private CashFlowReportRepository reportRepository;
     @Mock
+    private InvoiceRepository invoiceRepository;
+    @Mock
     private CategoryRepository categoryRepository;
     @Mock
     private CurrentUserService currentUserService;
@@ -56,6 +59,7 @@ class MonthlyAnnualCashFlowReportServiceTest {
     void setUp() {
         service = new CashFlowReportService(
                 reportRepository,
+                invoiceRepository,
                 categoryRepository,
                 currentUserService,
                 new CashFlowCalculator()

@@ -21,7 +21,7 @@ describe('ReportApiService', () => {
     inflows: 5000,
     outflows: 1500,
     net: 3500,
-    invoicePayments: 1200,
+    invoiceOutflows: 1200,
     incomeCategories: [],
     expenseCategories: [],
   };

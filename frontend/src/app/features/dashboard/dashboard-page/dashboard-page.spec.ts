@@ -4,7 +4,6 @@ import { of, Subject, throwError } from 'rxjs';
 
 import { CategoryApiService } from '../../categories/data-access/category-api.service';
 import { Category } from '../../categories/models/category.models';
-import { ReportApiService } from '../../reports/data-access/report-api.service';
 import { AnnualCompetenceReport, CompetenceReport } from '../../reports/models/report.models';
 import { DashboardApiService } from '../data-access/dashboard-api.service';
 import { Dashboard } from '../models/dashboard.models';
@@ -13,12 +12,12 @@ import { DashboardPage } from './dashboard-page';
 describe('DashboardPage', () => {
   let fixture: ComponentFixture<DashboardPage>;
   let component: DashboardPage;
-  let dashboardApi: { get: ReturnType<typeof vi.fn> };
-  let categoryApi: { findAll: ReturnType<typeof vi.fn> };
-  let reportApi: {
-    getCompetenceAnnual: ReturnType<typeof vi.fn>;
-    getCompetence: ReturnType<typeof vi.fn>;
+  let dashboardApi: {
+    get: ReturnType<typeof vi.fn>;
+    getAnnualChart: ReturnType<typeof vi.fn>;
+    getMonthlyChart: ReturnType<typeof vi.fn>;
   };
+  let categoryApi: { findAll: ReturnType<typeof vi.fn> };
   let router: { navigate: ReturnType<typeof vi.fn> };
 
   const categories: Category[] = [
@@ -111,12 +110,12 @@ describe('DashboardPage', () => {
   };
 
   beforeEach(async () => {
-    dashboardApi = { get: vi.fn().mockReturnValue(of(dashboard)) };
-    categoryApi = { findAll: vi.fn().mockReturnValue(of(categories)) };
-    reportApi = {
-      getCompetenceAnnual: vi.fn().mockReturnValue(of(annualCashFlow)),
-      getCompetence: vi.fn().mockReturnValue(of(monthlyCashFlow)),
+    dashboardApi = {
+      get: vi.fn().mockReturnValue(of(dashboard)),
+      getAnnualChart: vi.fn().mockReturnValue(of(annualCashFlow)),
+      getMonthlyChart: vi.fn().mockReturnValue(of(monthlyCashFlow)),
     };
+    categoryApi = { findAll: vi.fn().mockReturnValue(of(categories)) };
     router = { navigate: vi.fn().mockResolvedValue(true) };
 
     await TestBed.configureTestingModule({
@@ -124,7 +123,6 @@ describe('DashboardPage', () => {
       providers: [
         { provide: DashboardApiService, useValue: dashboardApi },
         { provide: CategoryApiService, useValue: categoryApi },
-        { provide: ReportApiService, useValue: reportApi },
         { provide: Router, useValue: router },
       ],
     }).compileComponents();
@@ -190,8 +188,8 @@ describe('DashboardPage', () => {
   it('should render interactive monthly flow and category spending charts', () => {
     const element = fixture.nativeElement as HTMLElement;
 
-    expect(reportApi.getCompetenceAnnual).toHaveBeenCalledWith(2026);
-    expect(reportApi.getCompetence).toHaveBeenCalledWith('2026-09-01', '2026-09-30');
+    expect(dashboardApi.getAnnualChart).toHaveBeenCalledWith(2026);
+    expect(dashboardApi.getMonthlyChart).toHaveBeenCalledWith(2026, 9);
     expect(element.textContent).toContain('Entradas e saídas por mês');
     expect(element.querySelectorAll('.dashboard__flow-month')).toHaveLength(12);
     expect(element.textContent).toContain('Gastos por categoria');

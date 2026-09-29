@@ -3,6 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { API_BASE_URL } from '../../../core/config/api-base-url';
 import { Dashboard } from '../models/dashboard.models';
+import { AnnualCompetenceReport, CompetenceReport } from '../../reports/models/report.models';
 import { DashboardApiService } from './dashboard-api.service';
 
 describe('DashboardApiService', () => {
@@ -99,6 +100,39 @@ describe('DashboardApiService', () => {
 
     expect(request.request.method).toBe('GET');
 
+    request.flush(response);
+  });
+
+  it('deve buscar os dados mensais do gráfico pelo vencimento das faturas', () => {
+    const response: CompetenceReport = {
+      startDate: '2026-10-01',
+      endDate: '2026-10-31',
+      totalIncome: 4000,
+      totalExpenses: 700,
+      result: 3300,
+      incomeCategories: [],
+      expenseCategories: [],
+    };
+
+    service.getMonthlyChart(2026, 10).subscribe((result) => expect(result).toEqual(response));
+
+    const request = httpMock.expectOne('/api/v1/dashboard/charts/monthly?year=2026&month=10');
+    expect(request.request.method).toBe('GET');
+    request.flush(response);
+  });
+
+  it('deve buscar a evolução anual do gráfico do dashboard', () => {
+    const response: AnnualCompetenceReport = {
+      year: 2026,
+      startDate: '2026-01-01',
+      endDate: '2026-12-31',
+      evolution: [],
+    };
+
+    service.getAnnualChart(2026).subscribe((result) => expect(result).toEqual(response));
+
+    const request = httpMock.expectOne('/api/v1/dashboard/charts/annual?year=2026');
+    expect(request.request.method).toBe('GET');
     request.flush(response);
   });
 });

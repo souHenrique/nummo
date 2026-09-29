@@ -2,9 +2,12 @@ package com.amorim.finance_manager.report.service;
 
 import com.amorim.finance_manager.category.entity.Category;
 import com.amorim.finance_manager.category.repository.CategoryRepository;
+import com.amorim.finance_manager.invoice.entity.InvoiceStatus;
+import com.amorim.finance_manager.invoice.repository.InvoiceRepository;
 import com.amorim.finance_manager.report.dto.*;
 import com.amorim.finance_manager.report.projection.AnnualCashFlowAggregate;
 import com.amorim.finance_manager.report.projection.CashFlowAggregate;
+import com.amorim.finance_manager.report.projection.InvoiceDueMonthAggregate;
 import com.amorim.finance_manager.report.repository.CashFlowReportRepository;
 import com.amorim.finance_manager.shared.exception.InvalidReportPeriodException;
 import com.amorim.finance_manager.transaction.entity.TransactionStatus;
@@ -33,8 +36,7 @@ public class CashFlowReportService {
 
     private static final List<TransactionType> CASH_TYPES = List.of(
             TransactionType.INCOME,
-            TransactionType.EXPENSE,
-            TransactionType.CREDIT_CARD_PAYMENT
+            TransactionType.EXPENSE
     );
 
     private static final List<TransactionType> CASH_OUTFLOW_TYPES = List.of(
@@ -43,6 +45,7 @@ public class CashFlowReportService {
     );
 
     private final CashFlowReportRepository reportRepository;
+    private final InvoiceRepository invoiceRepository;
     private final CategoryRepository categoryRepository;
     private final CurrentUserService currentUserService;
     private final CashFlowCalculator calculator;
@@ -54,10 +57,11 @@ public class CashFlowReportService {
 
         List<CashFlowAggregate> rows = aggregate(userId, date, date);
         Map<UUID, String> names = loadCategoryNames(userId, rows);
+        BigDecimal invoiceOutflows = invoiceOutflows(userId, date, date);
 
         return new DailyCashFlowResponse(
                 date,
-                calculator.summarize(rows, names)
+                calculator.summarize(rows, names, invoiceOutflows)
         );
     }
 
@@ -92,11 +96,13 @@ public class CashFlowReportService {
                 .filter(row -> row.effectiveDate().isBefore(start))
                 .toList();
 
-        CashFlowSummaryResponse current =
-                calculator.summarize(currentRows, names);
+        CashFlowSummaryResponse current = calculator.summarize(
+                currentRows, names, invoiceOutflows(userId, start, end)
+        );
 
-        CashFlowSummaryResponse previous =
-                calculator.summarize(previousRows, names);
+        CashFlowSummaryResponse previous = calculator.summarize(
+                previousRows, names, invoiceOutflows(userId, previousStart, previousEnd)
+        );
 
         return new WeeklyCashFlowResponse(
                 new CashFlowPeriodResponse(start, end, current),
@@ -119,13 +125,14 @@ public class CashFlowReportService {
 
         List<CashFlowAggregate> rows = aggregate(userId, start, end);
         Map<UUID, String> categoryNames = loadCategoryNames(userId, rows);
+        BigDecimal invoiceOutflows = invoiceOutflows(userId, start, end);
 
         return new MonthlyCashFlowResponse(
                 year,
                 month,
                 start,
                 end,
-                calculator.summarize(rows, categoryNames)
+                calculator.summarize(rows, categoryNames, invoiceOutflows)
         );
     }
 
@@ -151,13 +158,15 @@ public class CashFlowReportService {
                         .collect(Collectors.groupingBy(
                                 AnnualCashFlowAggregate::month
                         ));
+        Map<Integer, BigDecimal> invoiceOutflowsByMonth = invoiceOutflowsByMonth(userId, start, end);
 
         List<AnnualCashFlowMonthResponse> evolution =
                 IntStream.rangeClosed(1, 12)
                         .mapToObj(month -> new AnnualCashFlowMonthResponse(
                                 month,
                                 calculator.summarizeTotals(
-                                        rowsByMonth.getOrDefault(month, List.of())
+                                        rowsByMonth.getOrDefault(month, List.of()),
+                                        invoiceOutflowsByMonth.getOrDefault(month, BigDecimal.ZERO)
                                 )
                         ))
                         .toList();
@@ -199,9 +208,6 @@ public class CashFlowReportService {
             List<CashFlowAggregate> rows
     ) {
         Set<UUID> categoryIds = rows.stream()
-                .filter(row ->
-                        row.type() != TransactionType.CREDIT_CARD_PAYMENT
-                )
                 .map(CashFlowAggregate::categoryId)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
@@ -230,6 +236,33 @@ public class CashFlowReportService {
                     "O período deve estar entre 0001-01-01 e 9999-12-31"
             );
         }
+    }
+
+    private BigDecimal invoiceOutflows(UUID userId, LocalDate start, LocalDate end) {
+        return invoiceRepository.sumTotalAmountOwnedByUserIdAndDueDateBetweenAndStatusIn(
+                userId,
+                start,
+                end,
+                Set.of(InvoiceStatus.OPEN, InvoiceStatus.CLOSED, InvoiceStatus.PAID)
+        );
+    }
+
+    private Map<Integer, BigDecimal> invoiceOutflowsByMonth(
+            UUID userId,
+            LocalDate start,
+            LocalDate end
+    ) {
+        return invoiceRepository.sumTotalAmountByDueMonthOwnedByUserIdAndStatusIn(
+                        userId,
+                        start,
+                        end,
+                        Set.of(InvoiceStatus.OPEN, InvoiceStatus.CLOSED, InvoiceStatus.PAID)
+                )
+                .stream()
+                .collect(Collectors.toMap(
+                        InvoiceDueMonthAggregate::month,
+                        InvoiceDueMonthAggregate::amount
+                ));
     }
 
     private void validateYear(Integer year) {

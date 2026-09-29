@@ -1,6 +1,7 @@
 package com.amorim.finance_manager.report.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -9,7 +10,8 @@ import java.util.List;
         description = """
                 Resumo das movimentações COMPLETED no período,
                 considerando a data de efetivação.
-                Transferências e compras no cartão não compõem os totais.
+                Transferências e pagamentos de fatura não compõem os totais.
+                Faturas com vencimento no período compõem as saídas uma única vez.
                 """
 )
 public record CashFlowSummaryResponse(
@@ -23,8 +25,8 @@ public record CashFlowSummaryResponse(
         @Schema(
                 description = """
                         Total de saídas efetivas.
-                        Soma das despesas EXPENSE e dos pagamentos
-                        de fatura CREDIT_CARD_PAYMENT.
+                        Soma das despesas EXPENSE e dos valores das faturas
+                        de cartão com vencimento no período.
                         """,
                 example = "1500.00"
         )
@@ -41,13 +43,13 @@ public record CashFlowSummaryResponse(
 
         @Schema(
                 description = """
-                        Total de pagamentos efetivos de fatura.
+                        Total das faturas de cartão com vencimento no período.
                         Este valor já está incluído em outflows;
                         não deve ser somado novamente.
                         """,
                 example = "1200.00"
         )
-        BigDecimal invoicePayments,
+        BigDecimal invoiceOutflows,
 
         @Schema(
                 description = """
@@ -62,11 +64,18 @@ public record CashFlowSummaryResponse(
                 description = """
                         Despesas EXPENSE agrupadas por categoria,
                         em ordem decrescente de valor.
-                        Não inclui pagamentos de fatura nem compras no cartão.
+                        Não inclui o valor consolidado das faturas, exibido
+                        separadamente em invoiceOutflows.
                         Subcategorias permanecem separadas das categorias pai.
                         Retorna lista vazia quando não houver despesas diretas.
                         """
         )
         List<CategoryCashFlowResponse> expenseCategories
 ) {
+    /** @deprecated Use {@link #invoiceOutflows()} instead. */
+    @Deprecated
+    @JsonIgnore
+    public BigDecimal invoicePayments() {
+        return invoiceOutflows;
+    }
 }

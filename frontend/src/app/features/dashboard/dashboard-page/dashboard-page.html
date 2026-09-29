@@ -82,7 +82,7 @@
     <section class="dashboard__charts" aria-label="Visão gráfica das movimentações">
       <app-card
         title="Entradas e saídas por mês"
-        subtitle="Verde representa entradas; vermelho representa saídas."
+        subtitle="Verde representa entradas; vermelho representa saídas. Compras no cartão aparecem no mês de vencimento da fatura."
       >
         @if (monthlyFlow().length > 0) {
           <div class="dashboard__flow-chart">
@@ -145,7 +145,7 @@
 
       <app-card
         title="Gastos por categoria"
-        subtitle="Distribuição das saídas do mês de referência."
+        subtitle="Distribuição das saídas do mês de referência, incluindo compras no cartão que vencem no período."
       >
         @if (categoryExpenses().length > 0) {
           <div class="dashboard__category-chart">

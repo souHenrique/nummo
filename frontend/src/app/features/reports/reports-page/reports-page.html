@@ -183,8 +183,8 @@
             </div>
             @if (report.basis === 'CASH') {
               <div>
-                <dt>Pagamentos de fatura</dt>
-                <dd>{{ report.summary.invoicePayments | currency: 'BRL' }}</dd>
+                <dt>Saídas de faturas</dt>
+                <dd>{{ report.summary.invoiceOutflows | currency: 'BRL' }}</dd>
                 <small>Já incluídos nas saídas.</small>
               </div>
             }

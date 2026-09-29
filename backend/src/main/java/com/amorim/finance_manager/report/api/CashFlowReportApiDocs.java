@@ -24,11 +24,11 @@ public interface CashFlowReportApiDocs {
                     Considera somente movimentações COMPLETED cuja effectiveDate
                     corresponda à data consultada.
 
-                    INCOME compõe as entradas. EXPENSE e CREDIT_CARD_PAYMENT
-                    compõem as saídas. TRANSFER e CREDIT_CARD_PURCHASE
-                    não compõem os totais.
+                    INCOME compõe as entradas. EXPENSE e as faturas com
+                    vencimento no período compõem as saídas. TRANSFER e
+                    CREDIT_CARD_PAYMENT não compõem os totais.
 
-                    invoicePayments já está incluído em outflows.
+                    invoiceOutflows já está incluído em outflows.
                     As categorias de despesa incluem somente EXPENSE,
                     sem atribuir pagamentos de fatura às categorias das compras.
 
@@ -116,11 +116,11 @@ public interface CashFlowReportApiDocs {
                     Considera somente movimentações COMPLETED do usuário
                     autenticado, selecionadas pela effectiveDate.
 
-                    INCOME compõe as entradas. EXPENSE e CREDIT_CARD_PAYMENT
-                    compõem as saídas. TRANSFER e CREDIT_CARD_PURCHASE
-                    não compõem os totais.
+                    INCOME compõe as entradas. EXPENSE e as faturas com
+                    vencimento no período compõem as saídas. TRANSFER e
+                    CREDIT_CARD_PAYMENT não compõem os totais.
 
-                    invoicePayments já está incluído em outflows.
+                    invoiceOutflows já está incluído em outflows.
                     As categorias de despesa incluem somente EXPENSE.
 
                     As diferenças representam semana consultada menos
@@ -205,13 +205,13 @@ public interface CashFlowReportApiDocs {
                 Considera somente movimentações com status COMPLETED, selecionadas
                 pela effectiveDate dentro do mês consultado.
 
-                INCOME compõe as entradas. EXPENSE e CREDIT_CARD_PAYMENT compõem
-                as saídas. TRANSFER, CREDIT_CARD_PURCHASE e ADJUSTMENT não
-                compõem os totais.
+                INCOME compõe as entradas. EXPENSE e as faturas com vencimento
+                no período compõem as saídas. TRANSFER, CREDIT_CARD_PAYMENT,
+                CREDIT_CARD_PURCHASE e ADJUSTMENT não compõem os totais.
 
-                O pagamento de fatura é contado como saída de caixa, mas não é
-                incluído no agrupamento de despesas por categoria. Compras no
-                cartão não são contabilizadas, evitando dupla contagem.
+                O valor de cada fatura é contado no mês de vencimento, mas não é
+                incluído no agrupamento de despesas por categoria. O pagamento
+                posterior não é contabilizado novamente, evitando duplicidade.
 
                 net representa entradas menos saídas do mês e não corresponde
                 ao saldo atual das contas.
@@ -294,13 +294,12 @@ public interface CashFlowReportApiDocs {
                 Considera somente movimentações com status COMPLETED, selecionadas
                 pela effectiveDate entre o primeiro e o último dia do ano.
 
-                INCOME compõe as entradas. EXPENSE e CREDIT_CARD_PAYMENT compõem
-                as saídas. TRANSFER, CREDIT_CARD_PURCHASE e ADJUSTMENT não
-                compõem os totais.
+                INCOME compõe as entradas. EXPENSE e as faturas com vencimento
+                no período compõem as saídas. TRANSFER, CREDIT_CARD_PAYMENT,
+                CREDIT_CARD_PURCHASE e ADJUSTMENT não compõem os totais.
 
-                O pagamento de fatura é contado como saída de caixa. A compra no
-                cartão não é contabilizada no regime de caixa, evitando dupla
-                contagem.
+                O valor de cada fatura é contado no mês de vencimento. O pagamento
+                posterior não é contabilizado novamente, evitando duplicidade.
 
                 Para cada mês, net representa entradas menos saídas. Os valores
                 não correspondem ao saldo atual das contas.

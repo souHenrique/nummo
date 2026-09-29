@@ -27,7 +27,7 @@ describe('ReportsPage', () => {
     inflows: 5000,
     outflows: 1500,
     net: 3500,
-    invoicePayments: 1200,
+    invoiceOutflows: 1200,
     incomeCategories: [
       { categoryId: '1ad6caa5-b046-41d9-a6cf-2725aa68a0de', name: 'Salário', amount: 5000 },
     ],
