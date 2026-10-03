@@ -39,7 +39,7 @@
       <app-card
         class="dashboard__summary-card dashboard__summary-card--balance"
         title="Saldo"
-        subtitle="Entradas e pagamentos efetivados nas contas durante o mês."
+        subtitle="Entradas e saídas do mês, incluindo boletos pendentes com vencimento neste mês."
       >
         <div class="dashboard__summary-main">
           <span>Saldo do mês</span>
@@ -61,7 +61,7 @@
       <app-card
         class="dashboard__summary-card dashboard__summary-card--invoices"
         title="Faturas abertas do mês"
-        subtitle="Valor em aberto das faturas referentes ao mês exibido."
+        subtitle="Valor em aberto das faturas com vencimento no mês exibido."
       >
         <div class="dashboard__summary-main">
           <span>Em aberto neste mês</span>
@@ -82,7 +82,7 @@
     <section class="dashboard__charts" aria-label="Visão gráfica das movimentações">
       <app-card
         title="Entradas e saídas por mês"
-        subtitle="Verde representa entradas; vermelho representa saídas. Compras no cartão aparecem no mês de vencimento da fatura."
+        subtitle="Verde representa entradas; vermelho representa saídas. Compras no cartão e boletos pendentes aparecem no mês de vencimento."
       >
         @if (monthlyFlow().length > 0) {
           <div class="dashboard__flow-chart">
@@ -145,7 +145,7 @@
 
       <app-card
         title="Gastos por categoria"
-        subtitle="Distribuição das saídas do mês de referência, incluindo compras no cartão que vencem no período."
+        subtitle="Distribuição das saídas do mês, incluindo compras no cartão e boletos pendentes com vencimento no período."
       >
         @if (categoryExpenses().length > 0) {
           <div class="dashboard__category-chart">

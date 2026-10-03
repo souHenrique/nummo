@@ -23,6 +23,21 @@ import java.util.Optional;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    @ExceptionHandler(BillNotFoundException.class)
+    public ResponseEntity<ApiError> handleBillNotFound(BillNotFoundException exception, HttpServletRequest request) {
+        return response(HttpStatus.NOT_FOUND, ApiErrorCode.BILL_NOT_FOUND, exception.getMessage(), request);
+    }
+
+    @ExceptionHandler(InvalidBillException.class)
+    public ResponseEntity<ApiError> handleInvalidBill(InvalidBillException exception, HttpServletRequest request) {
+        return response(HttpStatus.BAD_REQUEST, ApiErrorCode.INVALID_BILL, exception.getMessage(), request);
+    }
+
+    @ExceptionHandler(BillConflictException.class)
+    public ResponseEntity<ApiError> handleBillConflict(BillConflictException exception, HttpServletRequest request) {
+        return response(HttpStatus.CONFLICT, ApiErrorCode.BILL_CONFLICT, exception.getMessage(), request);
+    }
+
     @ExceptionHandler(DuplicateEmailException.class)
     public ResponseEntity<ApiError> handleDuplicateEmail(
             DuplicateEmailException exception,

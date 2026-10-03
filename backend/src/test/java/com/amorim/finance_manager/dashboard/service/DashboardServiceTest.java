@@ -1,5 +1,7 @@
 package com.amorim.finance_manager.dashboard.service;
 
+import com.amorim.finance_manager.bill.entity.BillStatus;
+import com.amorim.finance_manager.bill.repository.BillRepository;
 import com.amorim.finance_manager.budget.dto.BudgetResponse;
 import com.amorim.finance_manager.budget.model.BudgetAlertStatus;
 import com.amorim.finance_manager.budget.service.BudgetService;
@@ -16,6 +18,8 @@ import com.amorim.finance_manager.user.service.CurrentUserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -23,6 +27,7 @@ import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Set;
@@ -30,6 +35,9 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -61,12 +69,17 @@ class DashboardServiceTest {
     private InvoiceRepository invoiceRepository;
 
     @Mock
+    private BillRepository billRepository;
+
+    @Mock
     private CurrentUserService currentUserService;
 
     private DashboardService dashboardService;
 
     @BeforeEach
     void setUp() {
+        lenient().when(billRepository.sumAmountByDuePeriodAndStatus(any(), any(), any(), any()))
+                .thenReturn(BigDecimal.ZERO);
         Clock clock = Clock.fixed(
                 Instant.parse("2026-09-10T12:00:00Z"),
                 ZoneId.of("America/Sao_Paulo")
@@ -78,13 +91,19 @@ class DashboardServiceTest {
                 budgetService,
                 accountRepository,
                 invoiceRepository,
+                billRepository,
                 currentUserService,
                 clock
         );
     }
 
-    @Test
-    void shouldAssembleDashboardUsingCashAndCompetenceRules() {
+    @ParameterizedTest
+    @CsvSource({"0.00, 2200.00, 800.00, CASH", "250.00, 1950.00, 1050.00, CASH_AND_BILL",
+            "3000.00, -800.00, 3800.00, CASH_AND_BILL"})
+    void shouldAssembleDashboardUsingCashAndCompetenceRules(
+            String pendingAmount, String expectedBalance, String expectedOutflows, AccountingBasis monthlyBasis) {
+        when(billRepository.sumAmountByDuePeriodAndStatus(USER_ID, START, END, BillStatus.PENDING))
+                .thenReturn(money(pendingAmount));
         when(currentUserService.getCurrentUserId())
                 .thenReturn(USER_ID);
 
@@ -131,6 +150,10 @@ class DashboardServiceTest {
                 ))
                 .thenReturn(money("400.00"));
 
+        when(invoiceRepository.sumTotalAmountOwnedByUserIdAndDueDateBetweenAndStatusIn(
+                USER_ID, START, END, Set.of(InvoiceStatus.OPEN)))
+                .thenReturn(money("250.00"));
+
         BudgetResponse budget = new BudgetResponse(
                 BUDGET_ID,
                 CATEGORY_ID,
@@ -155,9 +178,9 @@ class DashboardServiceTest {
         assertThat(response.periodEnd()).isEqualTo(END);
 
         assertThat(response.monthlyBalance().basis())
-                .isEqualTo(AccountingBasis.CASH_AND_INVOICE);
+                .isEqualTo(monthlyBasis);
         assertThat(response.monthlyBalance().amount())
-                .isEqualByComparingTo("1500.00");
+                .isEqualByComparingTo(expectedBalance);
 
         assertThat(response.monthlyInflows().basis())
                 .isEqualTo(AccountingBasis.CASH);
@@ -170,9 +193,9 @@ class DashboardServiceTest {
                 .isEqualByComparingTo("9800.00");
 
         assertThat(response.monthlyOutflows().basis())
-                .isEqualTo(AccountingBasis.CASH);
+                .isEqualTo(monthlyBasis);
         assertThat(response.monthlyOutflows().amount())
-                .isEqualByComparingTo("800.00");
+                .isEqualByComparingTo(expectedOutflows);
 
         assertThat(response.creditCardPurchaseOutflows().basis())
                 .isEqualTo(AccountingBasis.COMPETENCE);
@@ -188,6 +211,15 @@ class DashboardServiceTest {
                 .isEqualTo(AccountingBasis.COMPETENCE);
         assertThat(response.openInvoices().amount())
                 .isEqualByComparingTo("400.00");
+
+        assertThat(response.monthlyOpenInvoices().basis())
+                .isEqualTo(AccountingBasis.COMPETENCE);
+        assertThat(response.monthlyOpenInvoices().amount())
+                .isEqualByComparingTo("250.00");
+        verify(invoiceRepository).sumTotalAmountOwnedByUserIdAndStatusIn(USER_ID, Set.of(InvoiceStatus.OPEN));
+        verify(invoiceRepository).sumTotalAmountOwnedByUserIdAndDueDateBetweenAndStatusIn(
+                USER_ID, START, END, Set.of(InvoiceStatus.OPEN));
+        verifyNoMoreInteractions(invoiceRepository);
 
         assertThat(response.consolidatedBalance().basis())
                 .isEqualTo(AccountingBasis.CASH);
@@ -215,6 +247,8 @@ class DashboardServiceTest {
         verify(competenceReportService).creditCardPurchaseOutflows(2026, 9);
         verify(budgetService).findByPeriod(2026, 9);
         verify(accountRepository).sumCurrentBalanceByUserId(USER_ID);
+        verify(billRepository).sumAmountByDuePeriodAndStatus(USER_ID, START, END, BillStatus.PENDING);
+        verifyNoMoreInteractions(billRepository, accountRepository);
     }
 
     @Test
@@ -268,12 +302,47 @@ class DashboardServiceTest {
         when(budgetService.findByPeriod(2026, 9))
                 .thenReturn(List.of());
 
+        when(invoiceRepository.sumTotalAmountOwnedByUserIdAndDueDateBetweenAndStatusIn(
+                USER_ID, START, END, Set.of(InvoiceStatus.OPEN))).thenReturn(BigDecimal.ZERO);
+
         var response = dashboardService.get();
 
         assertThat(response.budget().totalLimit()).isZero();
         assertThat(response.budget().totalSpent()).isZero();
         assertThat(response.budget().usagePercentage()).isZero();
         assertThat(response.budget().items()).isEmpty();
+        assertThat(response.monthlyOpenInvoices().amount()).isZero();
+    }
+
+    @ParameterizedTest
+    @CsvSource({"2026, 1, 31", "2026, 12, 31", "2028, 2, 29", "2026, 2, 28"})
+    void shouldFilterMonthlyOpenInvoicesByCompleteDueDatePeriod(int year, int month, int lastDay) {
+        YearMonth period = YearMonth.of(year, month);
+        LocalDate start = period.atDay(1);
+        LocalDate end = LocalDate.of(year, month, lastDay);
+        Clock clock = Clock.fixed(start.atTime(12, 0).atZone(ZoneId.of("America/Sao_Paulo")).toInstant(),
+                ZoneId.of("America/Sao_Paulo"));
+        dashboardService = new DashboardService(cashFlowReportService, competenceReportService,
+                budgetService, accountRepository, invoiceRepository, billRepository, currentUserService, clock);
+
+        when(currentUserService.getCurrentUserId()).thenReturn(USER_ID);
+        when(cashFlowReportService.monthly(year, month)).thenReturn(new MonthlyCashFlowResponse(
+                year, month, start, end, new CashFlowSummaryResponse(
+                BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, List.of(), List.of())));
+        when(competenceReportService.generate(start, end)).thenReturn(new CompetenceReportResponse(
+                start, end, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, List.of(), List.of()));
+        when(invoiceRepository.sumTotalAmountOwnedByUserIdAndDueDateBetweenAndStatusIn(
+                USER_ID, start, end, Set.of(InvoiceStatus.OPEN))).thenReturn(money("125.50"));
+
+        var response = dashboardService.get();
+
+        assertThat(response.monthlyOpenInvoices().amount()).isEqualByComparingTo("125.50");
+        assertThat(response.periodStart()).isEqualTo(start);
+        assertThat(response.periodEnd()).isEqualTo(end);
+        verify(invoiceRepository).sumTotalAmountOwnedByUserIdAndStatusIn(USER_ID, Set.of(InvoiceStatus.OPEN));
+        verify(invoiceRepository).sumTotalAmountOwnedByUserIdAndDueDateBetweenAndStatusIn(
+                USER_ID, start, end, Set.of(InvoiceStatus.OPEN));
+        verifyNoMoreInteractions(invoiceRepository);
     }
 
     private BigDecimal money(String amount) {

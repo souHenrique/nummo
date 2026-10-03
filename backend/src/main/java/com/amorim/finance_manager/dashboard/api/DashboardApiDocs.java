@@ -29,12 +29,15 @@ public interface DashboardApiDocs {
                     Saldo, entradas e saídas mensais, despesas por competência e orçamento
                     representam o mês que contém referenceDate.
 
-                    monthlyBalance corresponde às entradas mensais menos as
-                    saídas mensais e menos as compras no cartão vinculadas às
-                    faturas de referência do mês. Seu basis é CASH_AND_INVOICE,
-                    pois combina movimentos efetivados e compromissos da fatura.
+                    monthlyBalance corresponde ao resultado mensal retornado pelo
+                    relatório, menos os boletos PENDING com vencimento no período.
+                    monthlyOutflows também inclui esses boletos pendentes. Quando
+                    há boletos pendentes, ambos usam basis CASH_AND_BILL.
+                    Boletos PAID já entram como transações pela effectiveDate do
+                    pagamento e não são somados novamente; CANCELLED não entram.
+                    Esta projeção não altera consolidatedBalance nem os relatórios.
 
-                    monthlyInflows e monthlyOutflows utilizam o regime CASH e
+                    monthlyInflows e a parcela efetivada de monthlyOutflows
                     selecionam transações pela effectiveDate entre o primeiro
                     e o último dia do mês. Assim, monthlyInflows é acumulado
                     durante todo o mês e só é reiniciado na mudança de período.
@@ -53,8 +56,9 @@ public interface DashboardApiDocs {
                     esse indicador; pagamentos de fatura não.
 
                     openInvoices soma exclusivamente todas as faturas com status OPEN.
-                    monthlyOpenInvoices aplica a mesma regra, limitada ao mês e
-                    ano de referência do dashboard.
+                    monthlyOpenInvoices aplica a mesma regra, incluindo somente
+                    faturas cujo vencimento ocorre entre periodStart e periodEnd,
+                    independentemente do mês de referência da fatura.
 
                     budget considera os orçamentos do mês atual e seu consumo
                     por competenceDate.
@@ -112,6 +116,8 @@ public interface DashboardApiDocs {
                     diretos usam a data efetiva; compras no cartão usam a data
                     de vencimento da fatura. Pagamentos de fatura não entram
                     novamente, evitando duplicidade.
+                    Boletos PENDING usam dueDate; após o pagamento, somente a
+                    transação efetivada entra pela data do pagamento.
                     """
     )
     ResponseEntity<CompetenceReportResponse> monthlyChart(
@@ -123,6 +129,8 @@ public interface DashboardApiDocs {
             description = """
                     Retorna os doze meses do ano. Compras no cartão são exibidas
                     no mês de vencimento de cada fatura, e não no mês da compra.
+                    Boletos pendentes são exibidos no mês de vencimento de cada
+                    parcela, sem duplicar o lançamento após o pagamento.
                     """
     )
     ResponseEntity<AnnualCompetenceReportResponse> annualChart(

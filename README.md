@@ -1,7 +1,7 @@
 # Nummo
 
 API REST para gestão financeira pessoal, com controle de contas, categorias,
-transações, transferências, cartões de crédito, faturas, orçamentos, relatórios,
+transações, transferências, cartões de crédito, faturas, boletos, orçamentos, relatórios,
 dashboard e exportação de transações em CSV.
 
 O projeto aplica isolamento dos dados por usuário, autenticação JWT, validações
@@ -28,6 +28,7 @@ nummo/
 - Cartões de crédito e compras à vista ou parceladas;
 - Geração, consulta, fechamento e pagamento de faturas;
 - Estorno de compras no cartão e aplicação de créditos em faturas;
+- Boletos únicos ou parcelados mensalmente, com vencimento, edição, cancelamento e registro de pagamento;
 - Orçamentos mensais por categoria, com cálculo de consumo e alertas;
 - Relatórios de caixa diário, semanal, mensal e anual;
 - Relatório financeiro por competência;
@@ -182,6 +183,19 @@ curl --request POST http://localhost:8080/api/v1/auth/login \
 | `GET`   | `/api/v1/credit-cards/{id}/invoices`                                  | Listar faturas de um cartão           |
 | `POST`  | `/api/v1/invoices/{id}/close`                                         | Fechar fatura                         |
 | `POST`  | `/api/v1/invoices/{id}/pay`                                           | Pagar fatura                          |
+
+### Boletos
+
+
+| Método | Endpoint | Descrição |
+| ------ | -------- | --------- |
+| `POST` | `/api/v1/bills` | Cadastrar boleto único ou parcelas mensais |
+| `GET` | `/api/v1/bills?year=YYYY&month=M&status=PENDING&page=0&size=20` | Listar por vencimento; status opcional |
+| `GET` | `/api/v1/bills/{id}` | Consultar boleto |
+| `PATCH` | `/api/v1/bills/{id}` | Editar um boleto pendente |
+| `POST` | `/api/v1/bills/{id}/pay` | Registrar pagamento integral |
+| `POST` | `/api/v1/bills/{id}/cancel` | Cancelar boleto preservando histórico |
+
 
 ### Orçamentos, relatórios e dashboard
 

@@ -1,5 +1,7 @@
 package com.amorim.finance_manager.dashboard.service;
 
+import com.amorim.finance_manager.bill.entity.BillStatus;
+import com.amorim.finance_manager.bill.repository.BillRepository;
 import com.amorim.finance_manager.budget.dto.BudgetResponse;
 import com.amorim.finance_manager.budget.service.BudgetService;
 import com.amorim.finance_manager.account.repository.AccountRepository;
@@ -40,6 +42,7 @@ public class DashboardService {
     private final BudgetService budgetService;
     private final AccountRepository accountRepository;
     private final InvoiceRepository invoiceRepository;
+    private final BillRepository billRepository;
     private final CurrentUserService currentUserService;
     private final Clock financeClock;
 
@@ -60,7 +63,13 @@ public class DashboardService {
         BigDecimal creditCardPurchaseOutflows = competenceReportService
                 .creditCardPurchaseOutflows(period.getYear(), period.getMonthValue());
 
-        BigDecimal monthlyBalance = monthlyCash.net();
+        BigDecimal pendingBills = billRepository.sumAmountByDuePeriodAndStatus(
+                userId, periodStart, periodEnd, BillStatus.PENDING);
+        // Paid bills already have a completed expense; add only unpaid commitments.
+        BigDecimal monthlyOutflows = monthlyCash.outflows().add(pendingBills);
+        BigDecimal monthlyBalance = monthlyCash.net().subtract(pendingBills);
+        AccountingBasis monthlyBasis = pendingBills.signum() > 0
+                ? AccountingBasis.CASH_AND_BILL : AccountingBasis.CASH;
 
         BigDecimal consolidatedBalance = accountRepository.sumCurrentBalanceByUserId(userId);
 
@@ -69,10 +78,10 @@ public class DashboardService {
                         .sumTotalAmountOwnedByUserIdAndStatusIn(userId, Set.of(InvoiceStatus.OPEN));
 
         BigDecimal monthlyOpenInvoices = invoiceRepository
-                .sumTotalAmountOwnedByUserIdAndReferencePeriodAndStatusIn(
+                .sumTotalAmountOwnedByUserIdAndDueDateBetweenAndStatusIn(
                         userId,
-                        period.getMonthValue(),
-                        period.getYear(),
+                        periodStart,
+                        periodEnd,
                         Set.of(InvoiceStatus.OPEN)
                 );
 
@@ -84,10 +93,10 @@ public class DashboardService {
                 period.getMonthValue(),
                 periodStart,
                 periodEnd,
-                cash(monthlyBalance),
+                new DashboardIndicatorResponse(monthlyBasis, monthlyBalance),
                 cash(monthlyCash.inflows()),
                 cash(totalOutflows),
-                cash(monthlyCash.outflows()),
+                new DashboardIndicatorResponse(monthlyBasis, monthlyOutflows),
                 competence(creditCardPurchaseOutflows),
                 competence(competence.totalExpenses()),
                 competence(openInvoices),

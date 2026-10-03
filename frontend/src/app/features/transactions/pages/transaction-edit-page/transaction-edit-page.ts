@@ -191,7 +191,7 @@ export class TransactionEditPage implements OnInit {
   }
 
   isEditable(transaction: Transaction): boolean {
-    return transaction.status !== 'CANCELLED';
+    return transaction.status !== 'CANCELLED' && transaction.paymentMethod !== 'BOLETO';
   }
 
   isCreditCardPurchase(transaction: Transaction): boolean {

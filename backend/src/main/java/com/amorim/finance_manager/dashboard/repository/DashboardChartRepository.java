@@ -2,6 +2,7 @@ package com.amorim.finance_manager.dashboard.repository;
 
 import com.amorim.finance_manager.report.projection.AnnualCashFlowAggregate;
 import com.amorim.finance_manager.report.projection.CompetenceAggregate;
+import com.amorim.finance_manager.bill.entity.BillStatus;
 import com.amorim.finance_manager.transaction.entity.Transaction;
 import com.amorim.finance_manager.transaction.entity.TransactionStatus;
 import com.amorim.finance_manager.transaction.entity.TransactionType;
@@ -15,6 +16,42 @@ import java.util.List;
 import java.util.UUID;
 
 public interface DashboardChartRepository extends Repository<Transaction, UUID> {
+
+    @Query("""
+            select new com.amorim.finance_manager.report.projection.CompetenceAggregate(
+                com.amorim.finance_manager.transaction.entity.TransactionType.EXPENSE,
+                bill.categoryId, sum(bill.amount)
+            )
+            from Bill bill
+            where bill.userId = :userId and bill.status = :status
+              and bill.dueDate between :startDate and :endDate
+            group by bill.categoryId
+            """)
+    List<CompetenceAggregate> aggregatePendingBillsByDueDate(
+            @Param("userId") UUID userId,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate,
+            @Param("status") BillStatus status
+    );
+
+    @Query("""
+            select new com.amorim.finance_manager.report.projection.AnnualCashFlowAggregate(
+                month(bill.dueDate),
+                com.amorim.finance_manager.transaction.entity.TransactionType.EXPENSE,
+                sum(bill.amount)
+            )
+            from Bill bill
+            where bill.userId = :userId and bill.status = :status
+              and bill.dueDate between :startDate and :endDate
+            group by month(bill.dueDate)
+            order by month(bill.dueDate)
+            """)
+    List<AnnualCashFlowAggregate> aggregatePendingBillsByDueMonth(
+            @Param("userId") UUID userId,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate,
+            @Param("status") BillStatus status
+    );
 
     @Query("""
             select new com.amorim.finance_manager.report.projection.CompetenceAggregate(

@@ -115,6 +115,27 @@ class TransactionServiceTest {
     }
 
     @Test
+    void shouldRejectEditingLinkedBillPaymentWithoutChangingBalance() {
+        when(transactionRepository.isBillPayment(TRANSACTION_ID, USER_ID)).thenReturn(true);
+        UpdateTransactionRequest request = new UpdateTransactionRequest(
+                "Pagamento de Jesse", new BigDecimal("150.00"), null, null,
+                null, null, null, null, null);
+        assertThatThrownBy(() -> transactionService.update(TRANSACTION_ID, request))
+                .isInstanceOf(InvalidTransactionException.class);
+        verifyNoInteractions(transactionImpactService, accountBalanceService, transactionMapper);
+        verify(transactionRepository, never()).saveAndFlush(any());
+    }
+
+    @Test
+    void shouldRejectCancellingLinkedBillPaymentWithoutChangingBalance() {
+        when(transactionRepository.isBillPayment(TRANSACTION_ID, USER_ID)).thenReturn(true);
+        assertThatThrownBy(() -> transactionService.cancel(TRANSACTION_ID))
+                .isInstanceOf(InvalidTransactionException.class);
+        verifyNoInteractions(transactionImpactService, accountBalanceService);
+        verify(transactionRepository, never()).saveAndFlush(any());
+    }
+
+    @Test
     void shouldLogTransactionCreationWithoutFinancialDetails() {
         CreateTransactionRequest request = completedExpense(PaymentMethod.DEBIT);
         Transaction transaction = transactionFrom(request);

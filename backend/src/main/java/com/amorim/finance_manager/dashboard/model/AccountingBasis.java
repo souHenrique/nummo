@@ -6,5 +6,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 public enum AccountingBasis {
     CASH,
     COMPETENCE,
-    CASH_AND_INVOICE
+    CASH_AND_INVOICE,
+    CASH_AND_BILL
 }

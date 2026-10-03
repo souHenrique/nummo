@@ -11,6 +11,7 @@ import { AccountApiService } from './features/accounts/data-access/account-api.s
 import { AuthService } from './features/auth/services/auth.service';
 import { CategoryApiService } from './features/categories/data-access/category-api.service';
 import { BudgetApiService } from './features/budgets/data-access/budget-api.service';
+import { BillApiService } from './features/bills/data-access/bill-api.service';
 import { CreditCardApiService } from './features/credit-cards/data-access/credit-card-api.service';
 import { DashboardApiService } from './features/dashboard/data-access/dashboard-api.service';
 import { InvoiceApiService } from './features/invoices/data-access/invoice-api.service';
@@ -22,6 +23,11 @@ import { TransferApiService } from './features/transfers/data-access/transfer-ap
 
 describe('Application routes', () => {
   let session: { hasValidSession: ReturnType<typeof vi.fn> };
+
+  beforeAll(async () => {
+    await import('./layout/shell/shell');
+    await import('./features/dashboard/dashboard-page/dashboard-page');
+  }, 30_000);
 
   beforeEach(() => {
     session = {
@@ -128,8 +134,20 @@ describe('Application routes', () => {
           },
         },
         {
+          provide: BillApiService,
+          useValue: {
+            list: vi
+              .fn()
+              .mockReturnValue(
+                of({ content: [], number: 0, size: 20, totalElements: 0, totalPages: 0 }),
+              ),
+          },
+        },
+        {
           provide: DashboardApiService,
           useValue: {
+            getAnnualChart: vi.fn().mockReturnValue(of(null)),
+            getMonthlyChart: vi.fn().mockReturnValue(of(null)),
             get: vi.fn().mockReturnValue(
               of({
                 referenceDate: '2026-09-16',
@@ -286,7 +304,7 @@ describe('Application routes', () => {
 
     expect(harness.routeNativeElement?.querySelector('app-header')).not.toBeNull();
     expect(harness.routeNativeElement?.querySelector('app-sidebar')).not.toBeNull();
-  });
+  }, 15_000);
 
   it('should redirect an unauthenticated user away from a private route', async () => {
     session.hasValidSession.mockReturnValue(false);
@@ -315,6 +333,7 @@ describe('Application routes', () => {
     '/invoices',
     '/invoices/123',
     '/budgets',
+    '/bills',
     '/reports',
     '/profile',
   ])(

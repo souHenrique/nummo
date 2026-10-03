@@ -107,6 +107,8 @@ public class TransactionService {
     public TransactionResponse update(UUID transactionId, UpdateTransactionRequest request) {
         UUID userId = currentUserService.getCurrentUserId();
 
+        validateNotBillPayment(transactionId, userId);
+
         Transaction transaction = transactionRepository
                 .findByIdAndUserId(transactionId, userId)
                 .orElseThrow(TransactionNotFoundException::new);
@@ -238,6 +240,8 @@ public class TransactionService {
     @Transactional
     public TransactionResponse cancel(UUID transactionId) {
         UUID userId = currentUserService.getCurrentUserId();
+
+        validateNotBillPayment(transactionId, userId);
 
         Transaction transaction = transactionRepository
                 .findByIdAndUserId(transactionId, userId)
@@ -627,6 +631,12 @@ public class TransactionService {
                 Math.min(pageable.getPageSize(), 100),
                 sort
         );
+    }
+
+    private void validateNotBillPayment(UUID transactionId, UUID userId) {
+        if (transactionRepository.isBillPayment(transactionId, userId)) {
+            throw new InvalidTransactionException("Pagamentos de boletos não podem ser alterados pela tela de transações");
+        }
     }
 
     private void validateGenericMutation(Transaction transaction) {

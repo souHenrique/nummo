@@ -1,0 +1,200 @@
+<section class="page bills" aria-labelledby="bills-title">
+  <header class="page__header">
+    <div>
+      <h1 id="bills-title">Boletos</h1>
+      <p>Organize seus pagamentos únicos, recorrentes e parcelados.</p>
+    </div>
+    <app-button [disabled]="busy() || state() !== 'success'" (pressed)="openForm()"
+      >Novo boleto</app-button
+    >
+  </header>
+
+  <div class="bills__filters">
+    <app-form-field label="Mês de vencimento" controlId="bills-period">
+      <input
+        appInput
+        id="bills-period"
+        type="month"
+        [value]="period()"
+        [disabled]="busy()"
+        (change)="selectPeriod($any($event.target).value)"
+      />
+    </app-form-field>
+    <app-form-field label="Status" controlId="bills-status">
+      <select
+        appSelect
+        id="bills-status"
+        [value]="statusFilter()"
+        [disabled]="busy()"
+        (change)="selectStatus($any($event.target).value)"
+      >
+        <option value="">Todos</option>
+        <option value="PENDING">A pagar (inclui vencidos)</option>
+        <option value="PAID">Pagos</option>
+        <option value="CANCELLED">Cancelados</option>
+      </select>
+    </app-form-field>
+    <p>Um boleto por vencimento. O pagamento será registrado na conta escolhida.</p>
+  </div>
+
+  @if (mutationError()) {
+    <app-alert tone="danger" title="Não foi possível concluir" [message]="mutationError()" />
+    @if (conflict()) {
+      <app-button variant="secondary" [disabled]="busy()" (pressed)="reloadAfterConflict()"
+        >Recarregar boletos</app-button
+      >
+      <p>Revise os dados atualizados antes de confirmar novamente.</p>
+    }
+  }
+
+  @if (formOpen()) {
+    <section class="bills__form" aria-labelledby="bill-form-title">
+      <h2 id="bill-form-title">{{ editingBill() ? 'Editar boleto' : 'Cadastrar boleto' }}</h2>
+      @if (categories().length === 0) {
+        <p>
+          Cadastre uma <a routerLink="/categories">categoria de despesa</a> para organizar seus
+          boletos.
+        </p>
+      }
+      <app-bill-form
+        [bill]="editingBill()"
+        [categories]="categories()"
+        [defaultDueDate]="defaultDueDate()"
+        [submitting]="busy() || conflict()"
+        (created)="create($event)"
+        (updated)="update($event)"
+        (cancelled)="closeForms()"
+      />
+    </section>
+  }
+
+  @if (paymentBill(); as bill) {
+    <section class="bills__form" aria-labelledby="bill-payment-title">
+      <h2 id="bill-payment-title">Registrar pagamento</h2>
+      <p>
+        {{ bill.description }} · Parcela {{ bill.installmentNumber }}/{{ bill.installmentCount }}
+      </p>
+      <p class="bills__amount">{{ bill.amount | currency: 'BRL' }}</p>
+      <form [formGroup]="paymentForm" (ngSubmit)="pay()" novalidate>
+        <fieldset [disabled]="busy() || conflict()">
+          <app-form-field
+            label="Conta de pagamento"
+            controlId="bill-payment-account"
+            [required]="true"
+          >
+            <select appSelect id="bill-payment-account" formControlName="sourceAccountId">
+              <option value="">Selecione uma conta</option>
+              @for (account of activeAccounts(); track account.id) {
+                <option [value]="account.id">{{ account.name }}</option>
+              }
+            </select>
+          </app-form-field>
+          <app-form-field label="Data do pagamento" controlId="bill-payment-date" [required]="true">
+            <input
+              appInput
+              id="bill-payment-date"
+              type="date"
+              [max]="today"
+              formControlName="paymentDate"
+            />
+          </app-form-field>
+          @if (!activeAccounts().length) {
+            <p>
+              Cadastre ou ative uma <a routerLink="/accounts">conta</a> para registrar o pagamento.
+            </p>
+          }
+        </fieldset>
+        <div class="bills__actions">
+          <app-button variant="secondary" [disabled]="busy()" (pressed)="closeForms()"
+            >Voltar</app-button
+          >
+          <app-button
+            type="submit"
+            [loading]="busy()"
+            [disabled]="busy() || conflict() || !activeAccounts().length"
+            >Registrar pagamento</app-button
+          >
+        </div>
+      </form>
+    </section>
+  }
+
+  @if (state() === 'loading') {
+    <div class="bills__grid" aria-label="Carregando boletos">
+      <app-skeleton height="14rem" /><app-skeleton height="14rem" />
+    </div>
+  } @else if (state() === 'error') {
+    <app-error-state
+      message="Não foi possível carregar os boletos. Tente novamente."
+      (retry)="loadData()"
+    />
+  } @else if (result(); as data) {
+    @if (!data.content.length) {
+      <app-empty-state
+        title="Nenhum boleto neste período"
+        description="Escolha outro mês ou cadastre um boleto com vencimento neste período."
+      />
+    } @else {
+      <p class="bills__count">{{ data.totalElements }} boleto(s) encontrado(s)</p>
+      <div class="bills__grid">
+        @for (bill of data.content; track bill.id) {
+          <app-card>
+            <div class="bills__card-header">
+              <h2>{{ bill.description }}</h2>
+              <app-badge [label]="statusLabel(bill)" [tone]="statusTone(bill)" />
+            </div>
+            <p class="bills__amount">{{ bill.amount | currency: 'BRL' }}</p>
+            <dl class="bills__details">
+              <div>
+                <dt>Vencimento</dt>
+                <dd>{{ formatDate(bill.dueDate) }}</dd>
+              </div>
+              <div>
+                <dt>Parcela</dt>
+                <dd>{{ bill.installmentNumber }} de {{ bill.installmentCount }}</dd>
+              </div>
+              <div>
+                <dt>Categoria</dt>
+                <dd>{{ categoryName(bill.categoryId) }}</dd>
+              </div>
+            </dl>
+            <div class="bills__actions">
+              @if (bill.status === 'PENDING') {
+                <app-button
+                  variant="ghost"
+                  size="sm"
+                  [disabled]="busy() || conflict()"
+                  (pressed)="cancelBill(bill)"
+                  >Cancelar boleto</app-button
+                >
+                <app-button
+                  variant="secondary"
+                  size="sm"
+                  [disabled]="busy() || conflict()"
+                  (pressed)="openForm(bill)"
+                  >Editar</app-button
+                >
+                <app-button
+                  size="sm"
+                  [disabled]="busy() || conflict()"
+                  (pressed)="openPayment(bill)"
+                  >Pagar</app-button
+                >
+              } @else if (bill.paymentTransactionId) {
+                <a [routerLink]="['/transactions', bill.paymentTransactionId]">Ver pagamento</a>
+              } @else {
+                <span class="bills__count">Mantido no histórico</span>
+              }
+            </div>
+          </app-card>
+        }
+      </div>
+      <app-pagination
+        [currentPage]="data.number + 1"
+        [totalPages]="data.totalPages"
+        [disabled]="busy()"
+        (pageChange)="selectPage($event)"
+      />
+    }
+  }
+</section>

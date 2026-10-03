@@ -243,18 +243,20 @@ export class TransactionDetailPage implements OnInit {
       TRANSFER: 'Transferência',
       CREDIT_CARD: 'Cartão de crédito',
       OTHER: 'Outro',
+      BOLETO: 'Boleto',
     };
 
     return labels[paymentMethod];
   }
 
   isEditable(transaction: Transaction): boolean {
-    return transaction.status !== 'CANCELLED';
+    return transaction.status !== 'CANCELLED' && transaction.paymentMethod !== 'BOLETO';
   }
 
   isCancellationAllowed(transaction: Transaction): boolean {
     return (
       transaction.status !== 'CANCELLED' &&
+      transaction.paymentMethod !== 'BOLETO' &&
       transaction.type !== 'CREDIT_CARD_PURCHASE' &&
       transaction.type !== 'CREDIT_CARD_PAYMENT'
     );

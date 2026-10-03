@@ -175,6 +175,58 @@ describe('DashboardPage', () => {
     expect(sections.at(-1)?.textContent).toContain('Saldo consolidado');
   });
 
+  it('should distinguish invoices due this month from the total of open invoices', () => {
+    const card = (fixture.nativeElement as HTMLElement).querySelector(
+      '.dashboard__summary-card--invoices',
+    ) as HTMLElement;
+
+    expect(card.textContent).toContain('com vencimento no mês exibido');
+    expect(card.querySelector('.dashboard__amount')?.textContent).toContain('650');
+    expect(card.querySelector('.dashboard__summary-breakdown dd')?.textContent).toContain('850');
+  });
+
+  it('should display pending bill projections in the monthly summary and charts', () => {
+    dashboardApi.get.mockReturnValueOnce(
+      of({
+        ...dashboard,
+        monthlyBalance: { basis: 'CASH_AND_BILL', amount: 2500 },
+        monthlyOutflows: { basis: 'CASH_AND_BILL', amount: 1750 },
+      }),
+    );
+    dashboardApi.getAnnualChart.mockReturnValueOnce(
+      of({
+        ...annualCashFlow,
+        evolution: annualCashFlow.evolution.map((row) =>
+          row.month === 9 ? { ...row, totals: { ...row.totals, outflows: 1750 } } : row,
+        ),
+      }),
+    );
+    dashboardApi.getMonthlyChart.mockReturnValueOnce(
+      of({
+        ...monthlyCashFlow,
+        expenseCategories: [{ categoryId: categories[0].id, name: 'Alimentação', amount: 2000 }],
+      }),
+    );
+
+    component.loadDashboard();
+    fixture.detectChanges();
+
+    const card = (fixture.nativeElement as HTMLElement).querySelector(
+      '.dashboard__summary-card--balance',
+    ) as HTMLElement;
+    expect(card.textContent).toContain('boletos pendentes com vencimento neste mês');
+    expect(card.querySelector('.dashboard__amount')?.textContent).toContain('2,500');
+    expect(card.querySelectorAll('.dashboard__summary-breakdown dd')[1]?.textContent).toContain(
+      '1,750',
+    );
+    expect(component.dashboard()?.consolidatedBalance.amount).toBe(7000);
+    component.selectFlow(component.annualCashFlow()!.evolution[8], 'outflow');
+    component.selectCategory(component.categorySegments()[0]);
+    fixture.detectChanges();
+    expect(component.flowTooltipText()).toContain('1.750,00');
+    expect(component.categoryTooltipText()).toContain('2.000,00');
+  });
+
   it('should navigate to reports for the detailed analysis', () => {
     const reportsButton = Array.from<HTMLButtonElement>(
       fixture.nativeElement.querySelectorAll('button'),

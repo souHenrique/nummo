@@ -23,6 +23,9 @@ public interface TransactionRepository
 
     Optional<Transaction> findByIdAndUserId(UUID id, UUID userId);
 
+    @Query("select count(bill) > 0 from Bill bill where bill.paymentTransactionId = :transactionId and bill.userId = :userId")
+    boolean isBillPayment(@Param("transactionId") UUID transactionId, @Param("userId") UUID userId);
+
     List<Transaction> findAllByInvoiceIdAndUserIdOrderByCompetenceDateAscCreatedAtAsc(UUID invoiceId, UUID userId);
 
     List<Transaction> findAllByInstallmentGroupIdAndCreditCardIdAndUserIdOrderByInstallmentNumberAsc(

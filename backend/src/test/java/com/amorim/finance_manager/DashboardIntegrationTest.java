@@ -4,6 +4,9 @@ import com.amorim.finance_manager.account.entity.Account;
 import com.amorim.finance_manager.account.entity.AccountStatus;
 import com.amorim.finance_manager.account.entity.AccountType;
 import com.amorim.finance_manager.account.repository.AccountRepository;
+import com.amorim.finance_manager.bill.entity.Bill;
+import com.amorim.finance_manager.bill.entity.BillStatus;
+import com.amorim.finance_manager.bill.repository.BillRepository;
 import com.amorim.finance_manager.budget.entity.Budget;
 import com.amorim.finance_manager.budget.repository.BudgetRepository;
 import com.amorim.finance_manager.category.entity.Category;
@@ -27,11 +30,14 @@ import com.amorim.finance_manager.user.repository.UserRepository;
 import com.amorim.finance_manager.user.service.CustomUserDetailsService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -51,6 +57,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
@@ -83,6 +90,9 @@ class DashboardIntegrationTest {
 
     @Autowired
     private InvoiceRepository invoiceRepository;
+
+    @Autowired
+    private BillRepository billRepository;
 
     @Autowired
     private TransactionRepository transactionRepository;
@@ -212,6 +222,119 @@ class DashboardIntegrationTest {
     void shouldRequireAuthentication() throws Exception {
         mockMvc.perform(get("/api/v1/dashboard"))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void shouldSumOpenInvoicesByDueDateRegardlessOfReferenceMonth() throws Exception {
+        TestUser owner = createUserWithFinancialStructure("walter", "0.00");
+        saveInvoiceWithDueDate(owner.creditCardId(), 8, InvoiceStatus.OPEN, "100.00",
+                LocalDate.of(2026, 9, 1));
+        saveInvoiceWithDueDate(owner.creditCardId(), 7, InvoiceStatus.OPEN, "200.00",
+                LocalDate.of(2026, 9, 30));
+        // September reference, October due date: not part of September's monthly card.
+        saveInvoiceWithDueDate(owner.creditCardId(), 9, InvoiceStatus.OPEN, "900.00",
+                LocalDate.of(2026, 10, 1));
+        saveInvoiceWithDueDate(owner.creditCardId(), 6, InvoiceStatus.OPEN, "50.00",
+                LocalDate.of(2026, 8, 31));
+        saveInvoiceWithDueDate(owner.creditCardId(), 5, InvoiceStatus.PAID, "400.00",
+                LocalDate.of(2026, 9, 10));
+        saveInvoiceWithDueDate(owner.creditCardId(), 4, InvoiceStatus.CANCELLED, "500.00",
+                LocalDate.of(2026, 9, 12));
+        TestUser anotherUser = createUserWithFinancialStructure("jesse", "0.00");
+        saveInvoiceWithDueDate(anotherUser.creditCardId(), 8, InvoiceStatus.OPEN, "5000.00",
+                LocalDate.of(2026, 9, 15));
+
+        JsonNode response = getDashboard(owner.token());
+
+        assertIndicator(response, "monthlyOpenInvoices", "300.00", "COMPETENCE");
+        assertIndicator(response, "openInvoices", "1250.00", "COMPETENCE");
+    }
+
+    @Test
+    void shouldIncludePreviousYearInvoiceWhenDueInJanuary() throws Exception {
+        when(financeClock.instant()).thenReturn(Instant.parse("2027-01-15T12:00:00Z"));
+        TestUser owner = createUserWithFinancialStructure("saul", "0.00");
+        saveInvoiceWithDueDate(owner.creditCardId(), 12, InvoiceStatus.OPEN, "275.00",
+                LocalDate.of(2027, 1, 17));
+
+        assertIndicator(getDashboard(owner.token()), "monthlyOpenInvoices", "275.00", "COMPETENCE");
+    }
+
+    private void saveInvoiceWithDueDate(UUID cardId, int referenceMonth, InvoiceStatus status,
+                                        String amount, LocalDate dueDate) {
+        UUID id = saveInvoice(cardId, referenceMonth, status, amount);
+        Invoice invoice = invoiceRepository.findById(id).orElseThrow();
+        invoice.setDueDate(dueDate);
+        invoiceRepository.saveAndFlush(invoice);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"2026-09-10, 250.00, 0.00", "2026-08-10, 0.00, 250.00"})
+    void shouldProjectPendingBillsAndReplaceThemWithPaymentWithoutDoubleCounting(
+            String paymentDate, String septemberPayment, String augustPayment) throws Exception {
+        TestUser owner = createUserWithFinancialStructure("walter", "1000.00");
+        Bill bill = saveBill(owner, "250.00", LocalDate.of(2026, 9, 30), BillStatus.PENDING);
+        saveBill(owner, "300.00", LocalDate.of(2026, 10, 30), BillStatus.PENDING);
+        saveBill(owner, "600.00", LocalDate.of(2026, 9, 15), BillStatus.CANCELLED);
+        TestUser anotherUser = createUserWithFinancialStructure("jesse", "0.00");
+        saveBill(anotherUser, "5000.00", LocalDate.of(2026, 9, 15), BillStatus.PENDING);
+
+        JsonNode before = getDashboard(owner.token());
+        assertIndicator(before, "monthlyOutflows", "250.00", "CASH_AND_BILL");
+        assertIndicator(before, "monthlyBalance", "-250.00", "CASH_AND_BILL");
+        assertIndicator(before, "consolidatedBalance", "1000.00", "CASH");
+        assertChartOutflows(owner, "250.00", "0.00", "250.00");
+
+        mockMvc.perform(post("/api/v1/bills/{id}/pay", bill.getId())
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + owner.token())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"sourceAccountId":"%s","paymentDate":"%s","expectedVersion":%d}
+                                """.formatted(owner.accountId(), paymentDate, bill.getVersion())))
+                .andExpect(status().isOk());
+
+        JsonNode after = getDashboard(owner.token());
+        assertIndicator(after, "monthlyOutflows", septemberPayment, "CASH");
+        assertIndicator(after, "monthlyBalance", new BigDecimal(septemberPayment).negate().toPlainString(), "CASH");
+        assertIndicator(after, "consolidatedBalance", "750.00", "CASH");
+        assertChartOutflows(owner, septemberPayment, augustPayment, septemberPayment);
+    }
+
+    private Bill saveBill(TestUser owner, String amount, LocalDate dueDate, BillStatus status) {
+        Bill bill = new Bill();
+        bill.setUserId(owner.id());
+        bill.setCategoryId(owner.expenseCategoryId());
+        bill.setDescription("Financiamento de Walter");
+        bill.setAmount(new BigDecimal(amount));
+        bill.setDueDate(dueDate);
+        bill.setSeriesId(UUID.randomUUID());
+        bill.setInstallmentNumber(1);
+        bill.setInstallmentCount(1);
+        bill.setStatus(status);
+        return billRepository.saveAndFlush(bill);
+    }
+
+    private void assertChartOutflows(TestUser owner, String monthly, String august, String september) throws Exception {
+        String content = mockMvc.perform(get("/api/v1/dashboard/charts/monthly")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + owner.token())
+                        .param("year", "2026").param("month", "9"))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
+        JsonNode chart = objectMapper.readTree(content);
+        assertThat(chart.path("totalExpenses").decimalValue()).isEqualByComparingTo(monthly);
+        if (new BigDecimal(monthly).signum() > 0) {
+            assertThat(chart.path("expenseCategories")).hasSize(1);
+            assertThat(chart.path("expenseCategories").get(0).path("categoryId").asText())
+                    .isEqualTo(owner.expenseCategoryId().toString());
+        } else {
+            assertThat(chart.path("expenseCategories")).isEmpty();
+        }
+        content = mockMvc.perform(get("/api/v1/dashboard/charts/annual")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + owner.token()).param("year", "2026"))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
+        JsonNode evolution = objectMapper.readTree(content).path("evolution");
+        assertThat(evolution.get(7).path("totals").path("outflows").decimalValue()).isEqualByComparingTo(august);
+        assertThat(evolution.get(8).path("totals").path("outflows").decimalValue()).isEqualByComparingTo(september);
+        assertThat(evolution.get(9).path("totals").path("outflows").decimalValue()).isEqualByComparingTo("300.00");
     }
 
     private JsonNode getDashboard(String token) throws Exception {

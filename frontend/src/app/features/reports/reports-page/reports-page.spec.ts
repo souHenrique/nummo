@@ -106,7 +106,7 @@ describe('ReportsPage', () => {
     expect(element.textContent).toContain('Relatório mensal');
     expect(element.textContent).not.toContain('CASH');
     expect(element.textContent).not.toContain('COMPETENCE');
-    expect(element.textContent).toContain('Pagamentos de fatura');
+    expect(element.textContent).toContain('Saídas de faturas');
     expect(element.textContent).toContain('Já incluídos nas saídas.');
     expect(element.querySelector('[role="img"]')).not.toBeNull();
     expect(element.querySelector('table')).not.toBeNull();

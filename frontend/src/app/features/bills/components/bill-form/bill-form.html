@@ -1,0 +1,101 @@
+<form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+  <app-form-field
+    label="Descrição"
+    controlId="bill-description"
+    [required]="true"
+    [error]="fieldError('description')"
+  >
+    <input
+      appInput
+      id="bill-description"
+      formControlName="description"
+      maxlength="255"
+      placeholder="Ex.: Financiamento da moto"
+    />
+  </app-form-field>
+
+  @if (!bill()) {
+    <app-form-field label="Tipo de boleto" controlId="bill-recurrence">
+      <select appSelect id="bill-recurrence" formControlName="recurrence">
+        <option value="single">Boleto único</option>
+        <option value="monthly">Recorrente / parcelado mensalmente</option>
+      </select>
+    </app-form-field>
+  }
+
+  <div class="bill-form__grid">
+    <app-form-field
+      label="Valor de cada boleto"
+      controlId="bill-amount"
+      [required]="true"
+      [error]="fieldError('amount')"
+      hint="Informe o valor da parcela, e não o total do financiamento."
+    >
+      <input appInput appCurrencyInput id="bill-amount" formControlName="amount" />
+    </app-form-field>
+    <app-form-field
+      [label]="
+        !bill() && form.controls.recurrence.value === 'monthly'
+          ? 'Primeiro vencimento'
+          : 'Vencimento'
+      "
+      controlId="bill-due-date"
+      [required]="true"
+      [error]="fieldError('dueDate')"
+    >
+      <input
+        appInput
+        id="bill-due-date"
+        type="date"
+        formControlName="dueDate"
+        min="1900-01-01"
+        max="9999-12-31"
+      />
+    </app-form-field>
+  </div>
+
+  @if (!bill() && form.controls.recurrence.value === 'monthly') {
+    <app-form-field
+      label="Quantidade de parcelas"
+      controlId="bill-count"
+      [required]="true"
+      [error]="fieldError('installmentCount')"
+      hint="Será criado um boleto separado por mês. Em meses mais curtos, o vencimento será no último dia do mês."
+    >
+      <input
+        appInput
+        id="bill-count"
+        type="number"
+        min="1"
+        max="600"
+        step="1"
+        formControlName="installmentCount"
+      />
+    </app-form-field>
+  }
+
+  <app-form-field
+    label="Categoria"
+    controlId="bill-category"
+    [required]="true"
+    [error]="fieldError('categoryId')"
+  >
+    <select appSelect id="bill-category" formControlName="categoryId">
+      <option value="">Selecione uma categoria de despesa</option>
+      @for (category of activeCategories(); track category.id) {
+        <option [value]="category.id">{{ category.name }}</option>
+      }
+    </select>
+  </app-form-field>
+  @if (bill()) {
+    <p class="bill-form__hint">As alterações serão aplicadas somente a este boleto.</p>
+  }
+  <div class="bill-form__actions">
+    <app-button variant="secondary" [disabled]="submitting()" (pressed)="cancelled.emit()"
+      >Cancelar</app-button
+    >
+    <app-button type="submit" [loading]="submitting()" [disabled]="submitting()">
+      {{ bill() ? 'Salvar alterações' : 'Cadastrar boleto' }}
+    </app-button>
+  </div>
+</form>

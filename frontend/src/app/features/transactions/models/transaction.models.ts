@@ -5,7 +5,8 @@ export type TransactionType =
 
 export type TransactionStatus = 'PENDING' | 'COMPLETED' | 'CANCELLED';
 
-export type PaymentMethod = 'DEBIT' | 'PIX' | 'CASH' | 'TRANSFER' | 'CREDIT_CARD' | 'OTHER';
+export type PaymentMethod =
+  'DEBIT' | 'PIX' | 'CASH' | 'TRANSFER' | 'CREDIT_CARD' | 'OTHER' | 'BOLETO';
 
 export interface Transaction {
   id: string;

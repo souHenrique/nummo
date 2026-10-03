@@ -1,0 +1,32 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+form {
+  display: grid;
+  gap: var(--space-4);
+}
+.bill-form__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+.bill-form__hint {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+.bill-form__actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+@media (max-width: 640px) {
+  .bill-form__grid {
+    grid-template-columns: 1fr;
+  }
+  .bill-form__actions {
+    flex-direction: column-reverse;
+  }
+}

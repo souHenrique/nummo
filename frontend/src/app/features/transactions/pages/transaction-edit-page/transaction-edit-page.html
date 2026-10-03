@@ -24,7 +24,7 @@
       <app-alert
         tone="warning"
         title="Edição indisponível"
-        message="Transações canceladas não podem ser alteradas."
+        message="Transações canceladas e pagamentos de boletos não podem ser alterados nesta tela."
       />
 
       <div class="transaction-edit-page__actions">
@@ -61,9 +61,7 @@
           <label
             >Valor total <input type="number" formControlName="amount" min="0.01" step="0.01"
           /></label>
-          <label
-            >Data da compra <input type="date" formControlName="purchaseDate"
-          /></label>
+          <label>Data da compra <input type="date" formControlName="purchaseDate" /></label>
           <label
             >Categoria
             <select formControlName="categoryId">

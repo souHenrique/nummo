@@ -1,6 +1,6 @@
 import { BudgetAlertStatus } from '../../budgets/models/budget.models';
 
-export type AccountingBasis = 'CASH' | 'COMPETENCE' | 'CASH_AND_INVOICE';
+export type AccountingBasis = 'CASH' | 'COMPETENCE' | 'CASH_AND_INVOICE' | 'CASH_AND_BILL';
 
 export interface DashboardIndicator {
   basis: AccountingBasis;

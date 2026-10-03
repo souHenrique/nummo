@@ -1,5 +1,6 @@
 package com.amorim.finance_manager.dashboard.service;
 
+import com.amorim.finance_manager.bill.entity.BillStatus;
 import com.amorim.finance_manager.category.entity.Category;
 import com.amorim.finance_manager.category.repository.CategoryRepository;
 import com.amorim.finance_manager.dashboard.repository.DashboardChartRepository;
@@ -30,6 +31,7 @@ import java.util.stream.IntStream;
 /**
  * Supplies the dashboard-only charts. Direct entries and expenses follow their
  * effective date; credit-card purchases follow the due date of their invoice.
+ * Pending bills follow their due date; once paid, their expense follows the payment date.
  */
 @Service
 @RequiredArgsConstructor
@@ -70,6 +72,8 @@ public class DashboardChartService {
                 TransactionType.CREDIT_CARD_PURCHASE
         ));
 
+        rows.addAll(chartRepository.aggregatePendingBillsByDueDate(userId, start, end, BillStatus.PENDING));
+
         return calculator.calculate(start, end, rows, loadCategoryNames(userId, rows));
     }
 
@@ -96,6 +100,8 @@ public class DashboardChartService {
                 TransactionStatus.COMPLETED,
                 TransactionType.CREDIT_CARD_PURCHASE
         ));
+
+        rows.addAll(chartRepository.aggregatePendingBillsByDueMonth(userId, start, end, BillStatus.PENDING));
 
         Map<Integer, List<AnnualCashFlowAggregate>> rowsByMonth = rows.stream()
                 .collect(Collectors.groupingBy(AnnualCashFlowAggregate::month));

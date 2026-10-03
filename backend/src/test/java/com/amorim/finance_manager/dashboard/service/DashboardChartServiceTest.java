@@ -1,5 +1,6 @@
 package com.amorim.finance_manager.dashboard.service;
 
+import com.amorim.finance_manager.bill.entity.BillStatus;
 import com.amorim.finance_manager.category.entity.Category;
 import com.amorim.finance_manager.category.repository.CategoryRepository;
 import com.amorim.finance_manager.dashboard.repository.DashboardChartRepository;
@@ -123,7 +124,54 @@ class DashboardChartServiceTest {
         verify(chartRepository).aggregateCreditCardPurchasesByDueMonth(
                 USER_ID, start, end, TransactionStatus.COMPLETED, TransactionType.CREDIT_CARD_PURCHASE
         );
+        verify(chartRepository).aggregatePendingBillsByDueMonth(USER_ID, start, end, BillStatus.PENDING);
         verifyNoMoreInteractions(chartRepository, categoryRepository);
+    }
+
+    @Test
+    void shouldAddPendingBillsToMonthlyOutflowsAndTheirCategories() {
+        LocalDate start = LocalDate.of(2026, 9, 1);
+        LocalDate end = LocalDate.of(2026, 9, 30);
+        when(currentUserService.getCurrentUserId()).thenReturn(USER_ID);
+        // Includes a paid bill already recorded as an expense.
+        when(chartRepository.aggregateDirectTransactions(
+                USER_ID, start, end, TransactionStatus.COMPLETED, DIRECT_TYPES))
+                .thenReturn(List.of(row(TransactionType.EXPENSE, EXPENSE_CATEGORY_ID, "100.00")));
+        when(chartRepository.aggregatePendingBillsByDueDate(USER_ID, start, end, BillStatus.PENDING))
+                .thenReturn(List.of(row(TransactionType.EXPENSE, EXPENSE_CATEGORY_ID, "250.00")));
+        when(categoryRepository.findAllByUserIdAndIdIn(USER_ID, Set.of(EXPENSE_CATEGORY_ID)))
+                .thenReturn(List.of(category(EXPENSE_CATEGORY_ID, "Financiamento")));
+
+        var response = service.monthly(2026, 9);
+
+        assertThat(response.totalExpenses()).isEqualByComparingTo("350.00");
+        assertThat(response.result()).isEqualByComparingTo("-350.00");
+        assertThat(response.expenseCategories()).singleElement().satisfies(category -> {
+            assertThat(category.name()).isEqualTo("Financiamento");
+            assertThat(category.amount()).isEqualByComparingTo("350.00");
+        });
+        verify(chartRepository).aggregatePendingBillsByDueDate(USER_ID, start, end, BillStatus.PENDING);
+    }
+
+    @Test
+    void shouldPlacePendingInstallmentsInTheirDueMonthsWithoutRepeatingPaidExpenses() {
+        LocalDate start = LocalDate.of(2026, 1, 1);
+        LocalDate end = LocalDate.of(2026, 12, 31);
+        when(currentUserService.getCurrentUserId()).thenReturn(USER_ID);
+        when(chartRepository.aggregateDirectTransactionsByMonth(
+                USER_ID, start, end, TransactionStatus.COMPLETED, DIRECT_TYPES))
+                .thenReturn(List.of(annualRow(9, TransactionType.EXPENSE, "100.00")));
+        when(chartRepository.aggregatePendingBillsByDueMonth(USER_ID, start, end, BillStatus.PENDING))
+                .thenReturn(List.of(annualRow(9, TransactionType.EXPENSE, "250.00"),
+                        annualRow(10, TransactionType.EXPENSE, "250.00")));
+
+        var response = service.annual(2026);
+
+        assertThat(response.evolution().get(7).totals().outflows()).isZero();
+        assertThat(response.evolution().get(8).totals().outflows()).isEqualByComparingTo("350.00");
+        assertThat(response.evolution().get(9).totals().outflows()).isEqualByComparingTo("250.00");
+        assertThat(response.evolution().get(10).totals().outflows()).isZero();
+        verify(chartRepository).aggregatePendingBillsByDueMonth(USER_ID, start, end, BillStatus.PENDING);
     }
 
     private CompetenceAggregate row(TransactionType type, UUID categoryId, String amount) {

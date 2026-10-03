@@ -802,7 +802,7 @@ class OpenApiIntegrationTest {
                         "Compras no cartão",
                         "pagamentos de fatura",
                         "OPEN",
-                        "CASH_AND_INVOICE",
+                        "CASH_AND_BILL",
                         "basis"
                 );
 

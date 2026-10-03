@@ -58,6 +58,11 @@ export const APP_NAVIGATION: readonly NavigationItem[] = [
     icon: LucideFileText,
   },
   {
+    label: 'Boletos',
+    route: '/bills',
+    icon: LucideReceiptText,
+  },
+  {
     label: 'Orçamentos',
     route: '/budgets',
     icon: LucideCircleDollarSign,

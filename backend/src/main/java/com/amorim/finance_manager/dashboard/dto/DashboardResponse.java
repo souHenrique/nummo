@@ -30,7 +30,7 @@ public record DashboardResponse(
         )
         LocalDate periodEnd,
 
-        @Schema(description = "Saldo mensal: entradas e saídas efetivas do mês, incluindo pagamentos de fatura quando realizados")
+        @Schema(description = "Saldo mensal: resultado do mês menos boletos pendentes com vencimento no período; não altera o saldo das contas")
         DashboardIndicatorResponse monthlyBalance,
 
         @Schema(description = "Entradas efetivadas durante o mês")
@@ -39,7 +39,7 @@ public record DashboardResponse(
         @Schema(description = "Soma histórica das saídas de caixa efetivadas")
         DashboardIndicatorResponse totalOutflows,
 
-        @Schema(description = "Saídas de caixa efetivadas durante o mês")
+        @Schema(description = "Saídas do mês acrescidas dos boletos pendentes com vencimento no período; pagamentos de boleto já contabilizados não são repetidos")
         DashboardIndicatorResponse monthlyOutflows,
 
         @Schema(description = "Compras no cartão vinculadas às faturas de referência do mês")
@@ -51,7 +51,7 @@ public record DashboardResponse(
         @Schema(description = "Valor atual das faturas com status OPEN")
         DashboardIndicatorResponse openInvoices,
 
-        @Schema(description = "Valor das faturas com status OPEN referentes ao mês exibido")
+        @Schema(description = "Valor das faturas com status OPEN cujo vencimento ocorre no mês exibido")
         DashboardIndicatorResponse monthlyOpenInvoices,
 
         @Schema(description = "Resumo dos orçamentos do mês atual")

@@ -82,6 +82,11 @@ export const routes: Routes = [
           import('./features/budgets/budgets.routes').then(({ BUDGET_ROUTES }) => BUDGET_ROUTES),
       },
       {
+        path: 'bills',
+        loadChildren: () =>
+          import('./features/bills/bills.routes').then(({ BILL_ROUTES }) => BILL_ROUTES),
+      },
+      {
         path: 'reports',
         loadChildren: () =>
           import('./features/reports/reports.routes').then(({ REPORT_ROUTES }) => REPORT_ROUTES),
